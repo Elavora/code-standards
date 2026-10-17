@@ -240,13 +240,19 @@ depende deste pacote já publicado no Packagist. A adoção fica para um PR depo
 ## Automação do repositório
 
 Os chamadores usam o `Elavora/.github` **1.1.0**, que descobre sozinho a própria versão (veja
-[Versão da automação](https://github.com/Elavora/.github/blob/main/docs/versao-da-automacao.md)): a versão aparece uma
-vez só, no `uses`, sem `automation_ref`, e o job chamador concede `id-token: write`. Assim, o Dependabot consegue
-manter os chamadores atualizados sozinho, mexendo só no `uses`.
+[Versão da automação](https://github.com/Elavora/.github/blob/main/docs/versao-da-automacao.md)). A versão aparece uma
+vez só, como o SHA de 40 caracteres no `uses`, com o comentário de versão logo ao lado
+(`@<SHA> # 1.1.0`), no mesmo padrão do `devcontainers` e do `api-framework`. Não há `automation_ref`, e o job
+chamador concede `id-token: write`: o workflow lê pelo OIDC o `job_workflow_sha`, que é justamente o SHA do `uses`.
 
-> **Versão do `.github`: conforme `.github` 1.1.0.** Enquanto esta documentação foi escrita, a tag `1.1.0` ainda
-> não existia. Os chamadores usam `@1.1.0` e este repositório só pode ser integrado depois que essa tag sair. Se a
-> versão estável que sair tiver outro número, troque-o nos dois chamadores.
+O Dependabot (ecossistema `github-actions`) atualiza o SHA e o comentário juntos, então os chamadores se mantêm em dia
+sem edição manual.
+
+> **SHA provisório.** Os blocos abaixo usam `7280f39ac00c9a558dc1bc0f1a9b1991953c3279`, o head atual do PR
+> [Elavora/.github#39](https://github.com/Elavora/.github/pull/39), porque a release `1.1.0` do `.github` ainda não
+> existia quando esta documentação foi escrita. **Antes do merge deste PR**, esse SHA precisa ser trocado, nos dois
+> chamadores, pelo SHA do commit de merge que gerou a tag `1.1.0` do `.github` (o commit para o qual a tag aponta).
+> O comentário `# 1.1.0` continua igual, a menos que a estável saia com outro número.
 
 ### Release
 
@@ -272,7 +278,7 @@ jobs:
       contents: write
       pull-requests: read
       id-token: write
-    uses: Elavora/.github/.github/workflows/release.yml@1.1.0
+    uses: Elavora/.github/.github/workflows/release.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
     with:
       package_name: elavora/code-standards
     secrets:
@@ -307,8 +313,10 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: Elavora/.github/.github/workflows/sync-labels.yml@1.1.0
+    uses: Elavora/.github/.github/workflows/sync-labels.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
 ```
+
+Nos dois chamadores, o SHA acima é provisório (veja o aviso em [Automação do repositório](#automação-do-repositório)).
 
 ### Dependabot
 
@@ -340,8 +348,9 @@ updates:
   sincronização de labels apagaria.
 - O prefixo segue o Conventional Commits (`chore(deps): ...`, `chore(deps-dev): ...`, `ci: ...`). O resto da mensagem
   é escrito pelo Dependabot, em inglês ("bump X from A to B"), e não é configurável.
-- O ecossistema `github-actions` atualiza o `actions/checkout` e a versão dos workflows do `.github` no `uses`
-  (`@1.1.0`). Como os chamadores não têm `automation_ref`, não sobra nada para atualizar à mão.
+- O ecossistema `github-actions` atualiza o `actions/checkout` e os workflows do `.github`: troca o SHA do `uses` e o
+  comentário de versão ao lado (`# 1.1.0`) no mesmo PR. Como os chamadores não têm `automation_ref`, não sobra nada
+  para atualizar à mão.
 
 ## Versões
 

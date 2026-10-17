@@ -14,4 +14,4 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: Elavora/.github/.github/workflows/sync-labels.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
+    uses: Elavora/.github/.github/workflows/sync-labels.yml@a24df9fa1816423221a4ad0aaf6a416da2087c41 # 1.1.0

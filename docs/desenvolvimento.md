@@ -248,12 +248,6 @@ chamador concede `id-token: write`: o workflow lê pelo OIDC o `job_workflow_sha
 O Dependabot (ecossistema `github-actions`) atualiza o SHA e o comentário juntos, então os chamadores se mantêm em dia
 sem edição manual.
 
-> **SHA provisório.** Os blocos abaixo usam `7280f39ac00c9a558dc1bc0f1a9b1991953c3279`, o head atual do PR
-> [Elavora/.github#39](https://github.com/Elavora/.github/pull/39), porque a release `1.1.0` do `.github` ainda não
-> existia quando esta documentação foi escrita. **Antes do merge deste PR**, esse SHA precisa ser trocado, nos dois
-> chamadores, pelo SHA do commit de merge que gerou a tag `1.1.0` do `.github` (o commit para o qual a tag aponta).
-> O comentário `# 1.1.0` continua igual, a menos que a estável saia com outro número.
-
 ### Release
 
 Arquivo `.github/workflows/release.yml`, o chamador dos pacotes descrito no
@@ -278,7 +272,7 @@ jobs:
       contents: write
       pull-requests: read
       id-token: write
-    uses: Elavora/.github/.github/workflows/release.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
+    uses: Elavora/.github/.github/workflows/release.yml@a24df9fa1816423221a4ad0aaf6a416da2087c41 # 1.1.0
     with:
       package_name: elavora/code-standards
     secrets:
@@ -313,10 +307,8 @@ jobs:
       contents: read
       issues: write
       id-token: write
-    uses: Elavora/.github/.github/workflows/sync-labels.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
+    uses: Elavora/.github/.github/workflows/sync-labels.yml@a24df9fa1816423221a4ad0aaf6a416da2087c41 # 1.1.0
 ```
-
-Nos dois chamadores, o SHA acima é provisório (veja o aviso em [Automação do repositório](#automação-do-repositório)).
 
 ### Dependabot
 

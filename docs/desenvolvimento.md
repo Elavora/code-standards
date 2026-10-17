@@ -27,9 +27,12 @@ confere o código dele com a própria configuração). Nada é instalado na máq
 | `LICENSE` | MIT, `Copyright (c) 2026 Elavora`, o mesmo texto do `api-framework` | sim |
 
 "Vai no pacote" quer dizer que o arquivo está no zip que o Composer baixa. O que não vai é marcado com
-`export-ignore` no `.gitattributes`:
+`export-ignore` no `.gitattributes`. A primeira linha força LF na cópia de trabalho, inclusive num Windows com
+`core.autocrlf=true`, para que o `editorconfig-checker` (`end_of_line = lf`) e os testes deem o mesmo resultado
+dentro e fora do CI:
 
 ```
+* text=auto eol=lf
 /.editorconfig export-ignore
 /.gitattributes export-ignore
 /.github export-ignore

@@ -1,0 +1,35 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: PHPUnit, formatação e actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Testes, formatação e EditorConfig
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer \
+            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c '
+              set -e
+              composer validate --strict --no-check-lock
+              composer install --no-interaction --no-progress
+              git diff --exit-code -- .editorconfig .php-cs-fixer.dist.php
+              composer test
+              php-cs-fixer check --show-progress=none
+              git ls-files -z | xargs -0 editorconfig-checker
+            '
+
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/work:ro" -w /work rhysd/actionlint:1.7.12 -color

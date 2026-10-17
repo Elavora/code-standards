@@ -1,0 +1,23 @@
+# >>> elavora/code-standards >>>
+# Bloco gerado pelo elavora/code-standards. Não edite: ele é reescrito a cada composer install e composer update.
+# Seções próprias do projeto vão depois da linha "# <<< elavora/code-standards <<<".
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json,neon}]
+indent_size = 2
+
+[*.md]
+indent_size = unset
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+# <<< elavora/code-standards <<<

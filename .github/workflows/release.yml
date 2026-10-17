@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
+    uses: Elavora/.github/.github/workflows/release.yml@7280f39ac00c9a558dc1bc0f1a9b1991953c3279 # 1.1.0
+    with:
+      package_name: elavora/code-standards
+    secrets:
+      PACKAGIST_WEBHOOK_URL: ${{ secrets.PACKAGIST_WEBHOOK_URL }}

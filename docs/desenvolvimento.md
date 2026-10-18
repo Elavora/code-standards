@@ -15,9 +15,10 @@ confere o código dele com a própria configuração). Nada é instalado na máq
 | --- | --- | --- |
 | `src/PhpCsFixer.php` | `Elavora\CodeStandards\PhpCsFixer` ([referência](php-cs-fixer.md#referência-elavoracodestandardsphpcsfixer)) | sim |
 | `src/EditorConfig.php`, `src/Sync.php`, `src/Status.php`, `src/Composer.php`, `src/Exception/` | a sincronização ([referência](editorconfig.md#referência)) | sim |
+| `src/Lint.php` | `Elavora\CodeStandards\Lint`, o lint de sintaxe ([referência](lint.md#classe-elavoracodestandardslint)) | sim |
 | `src/Cli.php` (ou outro nome interno) | a lógica do comando, se o dev quiser separá-la do `bin/` | sim |
 | `resources/editorconfig` | o `.editorconfig` base | sim |
-| `bin/elavora-standards` | o comando `sync` | sim |
+| `bin/elavora-standards` | o comando, com os subcomandos `sync` e `lint` | sim |
 | `tests/` | testes PHPUnit | não |
 | `docs/`, `README.md` | esta documentação | não (`docs/`) |
 | `.github/` | workflows e `dependabot.yml` | não |
@@ -63,10 +64,10 @@ dependências de quem o instala.
 ```json
 {
     "name": "elavora/code-standards",
-    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS) e EditorConfig",
+    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
     "type": "library",
     "license": "MIT",
-    "keywords": ["coding-standard", "editorconfig", "php-cs-fixer", "per-cs"],
+    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs"],
     "require": {
         "php": ">=8.3"
     },
@@ -87,6 +88,7 @@ dependências de quem o instala.
     "scripts": {
         "post-install-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "post-update-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
+        "lint": "@php bin/elavora-standards lint . bin/elavora-standards",
         "test": "phpunit"
     },
     "config": {
@@ -99,6 +101,10 @@ dependências de quem o instala.
   [Por que o pacote não depende do PHP-CS-Fixer](php-cs-fixer.md#por-que-o-pacote-não-depende-do-php-cs-fixer)).
 - Os scripts `post-install-cmd` e `post-update-cmd` são os mesmos que os projetos usam: aqui o pacote sincroniza o
   próprio `.editorconfig`.
+- O script `lint` usa o próprio lint do pacote. No repositório do pacote, o Composer não cria
+  `vendor/bin/elavora-standards` (ele só cria os binários das dependências), por isso o script chama
+  `bin/elavora-standards` com `@php`. O `.` mais `bin/elavora-standards` confere o repositório inteiro e também o
+  comando, que não tem a extensão `.php`.
 - `composer validate --strict --no-check-lock` passa sem avisos.
 
 ### Configuração do PHP-CS-Fixer deste repositório
@@ -161,6 +167,18 @@ Os testes usam PHPUnit, ficam em `tests/` e partem desta documentação:
   numa cópia sem `vendor/` e sem os dois arquivos) sai com 0, não cria nenhum dos dois e mostra o aviso
   `is not autoloadable`; `composer -d <projeto> install` a partir de outra pasta sincroniza o projeto, e não a pasta
   atual.
+- `Lint::files()` em pastas temporárias, com cada linha da [tabela de exemplos](lint.md#classe-elavoracodestandardslint)
+  e as regras de [Quais arquivos são conferidos](lint.md#quais-arquivos-são-conferidos) (extensão sem diferenciar
+  maiúsculas, `vendor` em qualquer nível, nomes com ponto, links para pastas, `--exclude` por pasta inteira, ordem e
+  repetição, caminho fora da pasta do projeto).
+- `Lint::check()` com um arquivo válido (`null`), um com erro de sintaxe (mensagem com o caminho e `on line`) e um
+  com um `Deprecated` de compilação (`null`).
+- O subcomando `lint` como processo (`php bin/elavora-standards lint ...`), conferindo código de saída, saída padrão e
+  saída de erro de cada linha da [tabela do subcomando](lint.md#subcomando-elavora-standards-lint) e o formato de
+  [O que aparece na saída](lint.md#o-que-aparece-na-saída).
+- Na integração com o Composer de verdade (o projeto temporário acima, com `"lint": "elavora-standards lint"` em
+  `scripts`): `composer lint` sai com 0 com todos os arquivos válidos e com código diferente de 0 com um arquivo com
+  erro de sintaxe, e a saída traz as linhas do lint.
 - `PhpCsFixer::config()` com o `php-cs-fixer` da imagem, conforme
   [Comportamento observável](php-cs-fixer.md#comportamento-observável-com-o-php-cs-fixer-da-imagem), num projeto
   temporário com o stub.
@@ -217,6 +235,7 @@ jobs:
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress
               git diff --exit-code -- .editorconfig .php-cs-fixer.dist.php
+              composer lint
               composer test
               php-cs-fixer check --show-progress=none
               git ls-files -z | xargs -0 editorconfig-checker
@@ -366,6 +385,16 @@ evitar commits `style:` inesperados. O Dependabot propõe as versões novas dent
 
 O repositório não tem tags. O PR que cria o pacote leva as labels `upgrade` e `release` e, no merge, gera a
 `1.0.0` (sem tag anterior, a base é `0.0.0`; `upgrade` leva a `1.0.0` e `release` a torna estável).
+
+### 1.1.0: o lint de sintaxe
+
+O PR que acrescenta o [lint](lint.md) leva as labels `enhancement` e `release` e, no merge, gera a `1.1.0`. É
+funcionalidade nova compatível: tudo o que a 1.0.0 entrega (o `sync`, o callback, o stub, o bloco do
+`.editorconfig`, a configuração do PHP-CS-Fixer, os códigos de saída do `sync`) continua igual, e um projeto que não
+liga o script `lint` não vê diferença nenhuma.
+
+Depois da publicação, o `api-framework` e o `api-skeleton` trocam o `tools/lint.php` pelo pacote, cada um no próprio
+PR (veja [Migrar do `tools/lint.php`](lint.md#migrar-do-toolslintphp)).
 
 ### Publicação no Packagist (ação manual, uma vez)
 

@@ -1,9 +1,9 @@
 {
     "name": "elavora/code-standards",
-    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS) e EditorConfig",
+    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
     "type": "library",
     "license": "MIT",
-    "keywords": ["coding-standard", "editorconfig", "php-cs-fixer", "per-cs"],
+    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs"],
     "require": {
         "php": ">=8.3"
     },
@@ -24,6 +24,7 @@
     "scripts": {
         "post-install-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "post-update-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
+        "lint": "@php bin/elavora-standards lint . bin/elavora-standards",
         "test": "phpunit"
     },
     "config": {

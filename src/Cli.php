@@ -16,15 +16,22 @@ final class Cli
     private const USAGE = <<<'TXT'
         Uso:
             elavora-standards sync [--force] [--dir=<pasta>]
+            elavora-standards lint [--dir=<pasta>] [--exclude=<caminho>]... [<caminho>...]
             elavora-standards help | --help | -h
 
         Comandos:
             sync    sincroniza o .editorconfig e o .php-cs-fixer.dist.php na raiz do projeto
+            lint    confere a sintaxe dos arquivos PHP do projeto com php -l
             help    mostra esta ajuda
 
         Opções do sync:
             --force          substitui o .editorconfig inteiro pelo bloco gerado
             --dir=<pasta>    pasta do projeto (padrão: a pasta atual)
+
+        Opções do lint:
+            --dir=<pasta>          pasta do projeto (padrão: a pasta atual)
+            --exclude=<caminho>    tira um arquivo ou uma pasta do lint; pode ser repetido
+            <caminho>...           pastas e arquivos a conferir (padrão: o projeto inteiro)
 
         TXT;
 
@@ -49,6 +56,10 @@ final class Cli
             fwrite($stdout, self::USAGE);
 
             return 0;
+        }
+
+        if ($args[0] === 'lint') {
+            return self::lint(\array_slice($args, 1), $stdout, $stderr);
         }
 
         $options = self::parseSync($args);
@@ -101,6 +112,67 @@ final class Cli
     public static function error(\Throwable $e): string
     {
         return self::PREFIX . 'erro: ' . $e->getMessage();
+    }
+
+    /**
+     * O subcomando lint.
+     *
+     * @param list<string> $args   os argumentos depois de `lint`
+     * @param resource     $stdout
+     * @param resource     $stderr
+     */
+    private static function lint(array $args, $stdout, $stderr): int
+    {
+        $dir = null;
+        $exclude = [];
+        $paths = [];
+        foreach ($args as $arg) {
+            if (!str_starts_with($arg, '-')) {
+                $paths[] = $arg;
+            } elseif (str_starts_with($arg, '--dir=') && $dir === null && \strlen($arg) > \strlen('--dir=')) {
+                $dir = substr($arg, \strlen('--dir='));
+            } elseif (str_starts_with($arg, '--exclude=') && \strlen($arg) > \strlen('--exclude=')) {
+                $exclude[] = substr($arg, \strlen('--exclude='));
+            } else {
+                fwrite($stderr, self::USAGE);
+
+                return 2;
+            }
+        }
+
+        $dir ??= (string) getcwd();
+        try {
+            $files = Lint::files($dir, $paths, $exclude);
+        } catch (\Throwable $e) {
+            fwrite($stderr, self::error($e) . "\n");
+
+            return 1;
+        }
+
+        $root = (string) realpath($dir);
+        $errors = 0;
+        foreach ($files as $file) {
+            $message = Lint::check($root, $file);
+            if ($message === null) {
+                continue;
+            }
+            $errors++;
+            fwrite($stderr, self::PREFIX . "erro de sintaxe em {$file}\n");
+            foreach (explode("\n", $message) as $line) {
+                fwrite($stderr, "  {$line}\n");
+            }
+        }
+
+        $total = \count($files);
+        if ($errors > 0) {
+            fwrite($stderr, self::PREFIX . "lint com erro: {$errors} de {$total} arquivo(s) com erro de sintaxe\n");
+
+            return 1;
+        }
+
+        fwrite($stdout, self::PREFIX . "lint ok: {$total} arquivo(s) sem erro de sintaxe\n");
+
+        return 0;
     }
 
     /**

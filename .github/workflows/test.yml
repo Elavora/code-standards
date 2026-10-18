@@ -26,6 +26,7 @@ jobs:
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress
               git diff --exit-code -- .editorconfig .php-cs-fixer.dist.php
+              composer lint
               composer test
               php-cs-fixer check --show-progress=none
               git ls-files -z | xargs -0 editorconfig-checker

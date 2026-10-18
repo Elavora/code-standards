@@ -1,0 +1,4 @@
+.php-cs-fixer.php
+.phpunit.cache/
+composer.lock
+vendor/

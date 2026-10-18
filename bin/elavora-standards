@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+(static function (): void {
+    $candidates = [
+        $GLOBALS['_composer_autoload_path'] ?? null,
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+    ];
+
+    foreach ($candidates as $candidate) {
+        if (\is_string($candidate) && is_file($candidate)) {
+            require $candidate;
+
+            exit(Elavora\CodeStandards\Cli::main(\array_slice($_SERVER['argv'] ?? [], 1), STDOUT, STDERR));
+        }
+    }
+
+    fwrite(
+        STDERR,
+        'elavora/code-standards: erro: o autoloader do Composer não foi encontrado. '
+        . "Rode \"composer install\" no projeto.\n",
+    );
+
+    exit(1);
+})();

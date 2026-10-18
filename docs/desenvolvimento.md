@@ -7,7 +7,7 @@
 Este repositório é o próprio pacote: o código PHP fica em `src/`, a base do EditorConfig em `resources/` e o comando
 em `bin/`. Ele segue as regras que distribui (o `.editorconfig` dele é gerado pelo próprio `sync`, e o PHP-CS-Fixer
 confere o código dele com a própria configuração). Nada é instalado na máquina: os testes rodam na imagem
-`ghcr.io/elavora/php-dev:8.3-0.2.0`, a mesma do CI.
+`ghcr.io/elavora/php-dev:8.3-latest`, a mesma do CI.
 
 ## Estrutura
 
@@ -128,10 +128,14 @@ O `sync` nunca reescreve esse arquivo, porque ele já existe.
 Na raiz do repositório, no PowerShell (no Git Bash, a conversão de caminhos quebra o `docker run`):
 
 ```powershell
-docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c "composer install --no-interaction && composer test"
+docker pull ghcr.io/elavora/php-dev:8.3-latest
+docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c "composer install --no-interaction && composer test"
 ```
 
-No devcontainer, basta `composer install` e `composer test`.
+O `docker pull` baixa a `8.3-latest` atual. Sem ele, o Docker usa a cópia local, que pode ser mais antiga que a do CI.
+
+O repositório não tem `.devcontainer/`. Num devcontainer com a imagem `ghcr.io/elavora/php-dev:8.3-latest`, basta
+`composer install` e `composer test`.
 
 ### O que precisa ser coberto
 
@@ -230,7 +234,7 @@ jobs:
       - name: Testes, formatação e EditorConfig
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer \
-            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c '
+            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c '
               set -e
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress
@@ -250,8 +254,14 @@ jobs:
 - O `git diff --exit-code`, logo depois do `composer install`, garante que o `.editorconfig` commitado é o que o
   `sync` gera com o código da própria branch: quem muda `resources/editorconfig` ou o bloco gerado precisa commitar
   o `.editorconfig` atualizado.
-- A imagem fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`; a troca é manual, junto
-  com a dos outros repositórios.
+- A imagem é a `8.3-latest`. O `Elavora/devcontainers` move essa referência a cada versão estável, e uma beta nunca
+  a move (veja [Imagem do job](https://github.com/Elavora/.github/blob/main/docs/qualidade.md#imagem-do-job)). Assim,
+  o CI acompanha as versões novas da imagem sem PR de troca.
+- Uma estável nova da imagem vale já na próxima execução do CI. Se ela quebrar o CI, um PR troca a `8.3-latest` pela
+  última versão que funcionava (por exemplo, `8.3-0.3.0`). Quando o `devcontainers` lançar a correção, outro PR volta
+  para a `8.3-latest`.
+- O `rhysd/actionlint:1.7.12` fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`, então
+  a troca dessa versão é manual.
 
 Na versão 1.0.0, este repositório não usa o workflow de qualidade central (`php-quality.yml`), porque esse workflow
 depende deste pacote já publicado no Packagist. A adoção fica para um PR depois da primeira publicação.

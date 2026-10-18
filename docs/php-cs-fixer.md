@@ -211,7 +211,7 @@ O `Finder` equivale a:
 Num projeto de exemplo com o stub na raiz e `src/A.php` contendo `<?php`, quebra de linha, `if(true){echo 1;}` e
 quebra de linha:
 
-| Comando (na imagem `ghcr.io/elavora/php-dev:8.3-0.2.0`) | Resultado |
+| Comando (na imagem `ghcr.io/elavora/php-dev:8.3-latest`) | Resultado |
 | --- | --- |
 | `php-cs-fixer check` na raiz | sai com **8** e cita `src/A.php`; o arquivo não muda |
 | `php-cs-fixer fix` na raiz | sai com 0 e `src/A.php` passa a seguir o PER-CS |

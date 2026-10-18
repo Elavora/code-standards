@@ -83,6 +83,22 @@ final class LintCheckTest extends TestCase
         self::assertStringContainsString('A.php', $message);
     }
 
+    /** O php -l roda sem shell: espaços e caracteres especiais do shell no nome chegam ao PHP como estão. */
+    public function testFileNameWithShellCharactersIsPassedAsIs(): void
+    {
+        $dir = $this->makeTempDir();
+        $broken = 'src/Com espaço $(echo x) `y` ;&.php';
+        $valid = "src/Válido 'aspas' \"duplas\".php";
+        $this->writeFile($dir . '/' . $broken, Expected::PHP_BROKEN);
+        $this->writeFile($dir . '/' . $valid, Expected::PHP_VALID);
+
+        $message = Lint::check($dir, $broken);
+
+        self::assertIsString($message);
+        self::assertStringContainsString($broken, $message);
+        self::assertNull(Lint::check($dir, $valid));
+    }
+
     public function testCheckWritesNothing(): void
     {
         $dir = $this->makeTempDir();

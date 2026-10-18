@@ -128,6 +128,7 @@ final class RepositoryFilesTest extends TestCase
         yield 'src/Sync.php' => ['src/Sync.php'];
         yield 'src/Status.php' => ['src/Status.php'];
         yield 'src/Composer.php' => ['src/Composer.php'];
+        yield 'src/Lint.php' => ['src/Lint.php'];
         yield 'resources/editorconfig' => ['resources/editorconfig'];
         yield 'bin/elavora-standards' => ['bin/elavora-standards'];
     }

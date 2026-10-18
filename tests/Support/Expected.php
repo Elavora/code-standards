@@ -51,6 +51,33 @@ final class Expected
 
     public const USAGE_LINE = 'elavora-standards sync [--force] [--dir=<pasta>]';
 
+    /** Linha de uso do subcomando lint (docs/lint.md, a partir da 1.1.0). */
+    public const LINT_USAGE_LINE = 'elavora-standards lint [--dir=<pasta>] [--exclude=<caminho>]... [<caminho>...]';
+
+    /** Um arquivo PHP válido. */
+    public const PHP_VALID = "<?php\n\necho 'ok';\n";
+
+    /** Um arquivo PHP com erro de sintaxe (chave sem fechar). */
+    public const PHP_BROKEN = "<?php\nfunction f()\n{\n";
+
+    /** Compila com um Deprecated no PHP 8.3, mas o php -l sai com 0 (docs/lint.md). */
+    public const PHP_DEPRECATED = "<?php function f(\$a = 1, \$b) {}\n";
+
+    public static function lintOk(int $count): string
+    {
+        return self::PREFIX . "lint ok: {$count} arquivo(s) sem erro de sintaxe";
+    }
+
+    public static function lintErrorTitle(string $file): string
+    {
+        return self::PREFIX . "erro de sintaxe em {$file}";
+    }
+
+    public static function lintErrorSummary(int $errors, int $total): string
+    {
+        return self::PREFIX . "lint com erro: {$errors} de {$total} arquivo(s) com erro de sintaxe";
+    }
+
     /** O bloco gerado (`B` nas tabelas da documentação). */
     public static function block(): string
     {

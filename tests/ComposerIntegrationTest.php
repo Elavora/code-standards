@@ -17,7 +17,8 @@ final class ComposerIntegrationTest extends TestCase
 {
     use TempDirectories;
 
-    private function makeProject(): string
+    /** @param array<string, string|list<string>> $scripts scripts acrescentados aos de sincronização */
+    private function makeProject(array $scripts = []): string
     {
         $dir = $this->makeTempDir();
         $composerJson = [
@@ -30,6 +31,7 @@ final class ComposerIntegrationTest extends TestCase
             'scripts' => [
                 'post-install-cmd' => ['Elavora\\CodeStandards\\Composer::sync'],
                 'post-update-cmd' => ['Elavora\\CodeStandards\\Composer::sync'],
+                ...$scripts,
             ],
         ];
         $this->writeFile(
@@ -50,7 +52,8 @@ final class ComposerIntegrationTest extends TestCase
         $home = $this->makeTempDir();
 
         return Process::run(
-            ['composer', ...$args, '--no-interaction', '--no-ansi'],
+            // As opções globais vêm antes, para não virarem argumentos do script em "composer lint -- ...".
+            ['composer', '--no-interaction', '--no-ansi', ...$args],
             $cwd,
             ['COMPOSER_HOME' => $home, 'COMPOSER_CACHE_DIR' => $home . '/cache', 'COMPOSER_DISABLE_NETWORK' => '1'],
         );
@@ -120,6 +123,55 @@ final class ComposerIntegrationTest extends TestCase
         self::assertSame(Expected::block(), file_get_contents($project . '/.editorconfig'));
         self::assertSame(Expected::STUB, file_get_contents($project . '/.php-cs-fixer.dist.php'));
         self::assertSame([], $this->snapshot($elsewhere));
+    }
+
+    /** O projeto temporário com "lint": "elavora-standards lint" em scripts, já instalado. */
+    private function makeLintProject(): string
+    {
+        $dir = $this->makeProject(['lint' => 'elavora-standards lint']);
+        $update = $this->composer(['update'], $dir);
+        self::assertSame(0, $update['code'], $update['stdout'] . $update['stderr']);
+        $this->writeFile($dir . '/src/A.php', Expected::PHP_VALID);
+        $this->writeFile($dir . '/tests/ATest.php', Expected::PHP_VALID);
+
+        return $dir;
+    }
+
+    public function testComposerLintExitsZeroWhenAllFilesAreValid(): void
+    {
+        $dir = $this->makeLintProject();
+
+        $result = $this->composer(['lint'], $dir);
+        $output = $result['stdout'] . $result['stderr'];
+
+        self::assertSame(0, $result['code'], $output);
+        // vendor/ (com o link para este repositório) e .php-cs-fixer.dist.php ficam de fora.
+        self::assertStringContainsString(Expected::lintOk(2), $output);
+    }
+
+    public function testComposerLintFailsWithASyntaxError(): void
+    {
+        $dir = $this->makeLintProject();
+        $this->writeFile($dir . '/src/Quebrado.php', Expected::PHP_BROKEN);
+
+        $result = $this->composer(['lint'], $dir);
+        $output = $result['stdout'] . $result['stderr'];
+
+        self::assertNotSame(0, $result['code'], $output);
+        self::assertStringContainsString(Expected::lintErrorTitle('src/Quebrado.php'), $output);
+        self::assertStringContainsString(Expected::lintErrorSummary(1, 3), $output);
+    }
+
+    public function testComposerLintAcceptsExtraArguments(): void
+    {
+        $dir = $this->makeLintProject();
+        $this->writeFile($dir . '/tests/legado/Quebrado.php', Expected::PHP_BROKEN);
+
+        $result = $this->composer(['lint', '--', '--exclude=tests/legado'], $dir);
+        $output = $result['stdout'] . $result['stderr'];
+
+        self::assertSame(0, $result['code'], $output);
+        self::assertStringContainsString(Expected::lintOk(2), $output);
     }
 
     public function testBrokenMarkersDoNotMakeComposerFail(): void

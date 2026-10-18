@@ -6,7 +6,7 @@
 
 Um projeto PHP da Elavora (um pacote `api-*` ou uma aplicação criada a partir do `api-skeleton`) adota as regras
 em três passos: instala o pacote no `require-dev`, liga os scripts de sincronização no `composer.json` e commita os
-dois arquivos que o pacote gera na raiz.
+dois arquivos que o pacote gera na raiz. Um quarto passo, opcional, liga o lint de sintaxe do pacote no script `lint`.
 
 Depois disso, o projeto fica assim:
 
@@ -24,8 +24,10 @@ Depois disso, o projeto fica assim:
 composer require --dev elavora/code-standards
 ```
 
-O pacote entra no `require-dev` com a restrição `^1.0`. Ele não deve ir para o `require`: as regras só servem para
-desenvolver e para o CI, e a instalação de produção (`composer install --no-dev`) não precisa dele.
+O pacote entra no `require-dev` com a restrição `^1.1` (a do `composer require` de hoje). Ele não deve ir para o
+`require`: as regras só servem para desenvolver e para o CI, e a instalação de produção (`composer install --no-dev`)
+não precisa dele. Um projeto que ainda está com `^1.0` funciona para a formatação e o `.editorconfig`, mas precisa
+passar para `^1.1` antes de usar o lint (veja o [passo 4](#4-ligar-o-lint-opcional)).
 
 O pacote não traz o PHP-CS-Fixer. Não acrescente `friendsofphp/php-cs-fixer` ao `require-dev`: o binário vem da
 imagem `ghcr.io/elavora/php-dev`, na mesma versão para todo mundo (veja
@@ -94,6 +96,20 @@ Commite os dois arquivos. Acrescente ao `.gitignore`:
 O `.php-cs-fixer.php` é o override pessoal (veja [Ajustar as regras](php-cs-fixer.md#ajustar-as-regras-num-projeto)).
 A configuração do pacote não usa cache, então não existe `.php-cs-fixer.cache` para ignorar.
 
+### 4. Ligar o lint (opcional)
+
+Para conferir a sintaxe de todos os arquivos PHP do projeto com `composer lint` (que o CI de qualidade roda quando o
+script existe), acrescente em `scripts`:
+
+```json
+"scripts": {
+    "lint": "elavora-standards lint"
+}
+```
+
+Sem argumentos, o lint confere o projeto inteiro, menos `vendor/` e o que começa com ponto. Se o projeto tinha um
+`tools/lint.php`, apague-o. Pastas, exclusões e a migração estão em [Lint de sintaxe PHP](lint.md).
+
 ### Quando o projeto já tem os arquivos
 
 - **`.php-cs-fixer.dist.php` já existe:** o pacote nunca mexe nele. Troque o conteúdo à mão pelo
@@ -116,6 +132,7 @@ Dentro do devcontainer (imagem `ghcr.io/elavora/php-dev:8.3-0.2.0` ou mais nova)
 php-cs-fixer fix                                  # formata com a configuração do pacote
 php-cs-fixer check                                # só confere, sem alterar (sai com 8 se houver o que corrigir)
 git ls-files -z | xargs -0 editorconfig-checker   # confere os arquivos versionados contra o .editorconfig
+composer lint                                     # confere a sintaxe dos arquivos PHP (com o passo 4)
 ```
 
 No VS Code do devcontainer, a extensão do PHP-CS-Fixer encontra o `.php-cs-fixer.dist.php` na raiz e formata ao
@@ -130,6 +147,9 @@ salvar.
    workflow de qualidade trata essa diferença (veja [Integração com o CI](integracao-ci.md#o-editorconfig-muda-no-ci)).
 4. Quem integra o PR roda `composer install` na branch e commita o `.editorconfig` atualizado, se o CI não tiver
    commitado.
+
+Uma melhoria no lint também chega pelo mesmo PR do Dependabot, sem mudar nenhum arquivo do projeto: o script `lint`
+só chama o comando do pacote.
 
 Uma versão nova das regras do PHP-CS-Fixer (uma regra a mais, por exemplo) não muda nenhum arquivo do projeto: o
 `.php-cs-fixer.dist.php` só carrega a configuração do pacote. O efeito aparece na próxima formatação, que pode gerar

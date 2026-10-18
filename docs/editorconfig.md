@@ -1,6 +1,6 @@
 # EditorConfig e o comando `sync`
 
-[README](../README.md) · Anterior: [Configuração do PHP-CS-Fixer](php-cs-fixer.md) · Próximo: [Integração com o CI](integracao-ci.md)
+[README](../README.md) · Anterior: [Configuração do PHP-CS-Fixer](php-cs-fixer.md) · Próximo: [Lint de sintaxe PHP](lint.md)
 
 ## Visão geral
 
@@ -180,8 +180,13 @@ Se nenhum existir, escreve `elavora/code-standards: erro: ...` na saída de erro
 
 ```
 elavora-standards sync [--force] [--dir=<pasta>]
+elavora-standards lint [--dir=<pasta>] [--exclude=<caminho>]... [<caminho>...]
 elavora-standards help | --help | -h
 ```
+
+O subcomando `lint` (a partir da 1.1.0) está descrito em
+[Lint de sintaxe PHP](lint.md#subcomando-elavora-standards-lint). A tabela abaixo é a do `sync` e do uso geral, que
+não mudou.
 
 | Chamada | Efeito | Código de saída |
 | --- | --- | --- |
@@ -196,7 +201,8 @@ elavora-standards help | --help | -h
 | comando desconhecido (`foo`), opção desconhecida (`sync --bar`), `--dir` sem valor (`--dir` ou `--dir=`), ou argumento a mais (`sync x`) | mostra o uso na saída de erro, nada é escrito | 2 |
 
 `--force` e `--dir` podem vir em qualquer ordem. O texto de uso contém a linha
-`elavora-standards sync [--force] [--dir=<pasta>]`.
+`elavora-standards sync [--force] [--dir=<pasta>]` e, a partir da 1.1.0, também a linha
+`elavora-standards lint [--dir=<pasta>] [--exclude=<caminho>]... [<caminho>...]`.
 
 ### Callback do Composer `Elavora\CodeStandards\Composer::sync`
 
@@ -329,4 +335,4 @@ Ficam no namespace `Elavora\CodeStandards\Exception`, ambas `final` e filhas de 
 
 ---
 
-[README](../README.md) · Anterior: [Configuração do PHP-CS-Fixer](php-cs-fixer.md) · Próximo: [Integração com o CI](integracao-ci.md)
+[README](../README.md) · Anterior: [Configuração do PHP-CS-Fixer](php-cs-fixer.md) · Próximo: [Lint de sintaxe PHP](lint.md)

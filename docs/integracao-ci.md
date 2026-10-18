@@ -1,6 +1,6 @@
 # Integração com o CI
 
-[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
+[README](../README.md) · Anterior: [Lint de sintaxe PHP](lint.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
 
 ## Visão geral
 
@@ -32,6 +32,7 @@ do pacote (versão major, label `upgrade`) e precisa ser combinada com o `Elavor
 | Arquivos que a sincronização pode criar ou alterar | só `.editorconfig` e `.php-cs-fixer.dist.php`, na raiz |
 | Configuração do `editorconfig-checker` | o pacote não traz `.editorconfig-checker.json` |
 | Versão do PHP-CS-Fixer de referência | a da imagem `ghcr.io/elavora/php-dev` usada pelo workflow (3.95.27 na `8.3-0.2.0`) |
+| Lint de sintaxe (a partir da 1.1.0) | o script `lint` do projeto, `"lint": "elavora-standards lint"`, que o workflow roda como `composer lint` quando o script existe; códigos de saída 0, 1 e 2 (veja a [referência](lint.md#referência)); exige o pacote em `^1.1` |
 | Pastas que a configuração do PHP-CS-Fixer ignora | `vendor/` (qualquer nível), tudo que começa com ponto (inclusive `.elavora/`), o que o `.gitignore` ignora |
 
 ## O que o workflow precisa respeitar
@@ -49,6 +50,10 @@ do pacote (versão major, label `upgrade`) e precisa ser combinada com o `Elavor
    só naquela execução. A base antiga em `Elavora/.github/standards/` deixa de existir.
 5. **Instalar com scripts.** `composer install --no-scripts` pula a sincronização. Se o workflow precisar disso por
    outro motivo, ele roda `vendor/bin/elavora-standards sync` logo depois.
+6. **O lint é do projeto.** O workflow continua rodando `composer lint` só quando o script existe, e não chama
+   `elavora-standards lint` direto: as pastas e as exclusões ficam na linha do script de cada projeto. Como o lint
+   roda com as dependências nas versões mínimas, o projeto precisa do pacote em `^1.1` (veja
+   [Uso num projeto](lint.md#uso-num-projeto)).
 
 ### O `.editorconfig` muda no CI
 
@@ -71,4 +76,4 @@ da `1.1.0`, ele aceita também `Elavora/code-standards`. Este repositório chama
 
 ---
 
-[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
+[README](../README.md) · Anterior: [Lint de sintaxe PHP](lint.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)

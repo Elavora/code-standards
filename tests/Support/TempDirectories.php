@@ -82,7 +82,14 @@ trait TempDirectories
 
     private static function removeRecursive(string $path): void
     {
-        if (is_link($path) || is_file($path)) {
+        // Symlink (o repositório "path" do Composer liga vendor/elavora/code-standards à raiz do repo):
+        // só remove o link, sem chmod nem recursão, que seguiriam o link e alterariam o alvo.
+        if (is_link($path)) {
+            @unlink($path);
+
+            return;
+        }
+        if (is_file($path)) {
             @chmod($path, 0o666);
             @unlink($path);
 

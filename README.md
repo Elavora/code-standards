@@ -3,14 +3,16 @@
 Regras de formatação e estilo compartilhadas pelos projetos PHP da Elavora, distribuídas como o pacote Composer
 `elavora/code-standards`.
 
-O pacote traz três coisas:
+O pacote traz quatro coisas:
 
 - a **configuração do PHP-CS-Fixer**, no padrão [PER-CS](https://www.php-fig.org/per/coding-style/), sem regras
   *risky*;
 - o **`.editorconfig` base** (indentação, fim de linha, espaços no fim da linha...), que um comando do pacote copia
   para a raiz do projeto;
 - o **lint de sintaxe PHP** (`elavora-standards lint`, a partir da 1.1.0), que roda `php -l` nos arquivos do projeto
-  e substitui o `tools/lint.php` que cada projeto copiava.
+  e substitui o `tools/lint.php` que cada projeto copiava;
+- a **base do PHPStan** (a partir da 1.2.0), com `level: max`, as regras do `phpstan-strict-rules` e uma lista de
+  chamadas proibidas, que o projeto inclui no próprio arquivo do PHPStan.
 
 ## Por que um pacote
 
@@ -73,8 +75,10 @@ Leia nesta ordem:
    quando o projeto já tem um `.editorconfig` e a referência do comando `vendor/bin/elavora-standards`.
 4. [Lint de sintaxe PHP](docs/lint.md): o subcomando `lint`, quais arquivos ele confere, como mudar as pastas, a
    saída, os códigos de saída e a migração do `tools/lint.php`.
-5. [Integração com o CI](docs/integracao-ci.md): o contrato que o workflow de qualidade do `Elavora/.github` usa.
-6. [Desenvolvimento deste repositório](docs/desenvolvimento.md): estrutura, testes, CI, release, Dependabot e a
+5. [Base do PHPStan](docs/phpstan.md): o arquivo que o projeto inclui, as dependências, o que cada regra confere,
+   as chamadas proibidas e como registrar uma exceção.
+6. [Integração com o CI](docs/integracao-ci.md): o contrato que o workflow de qualidade do `Elavora/.github` usa.
+7. [Desenvolvimento deste repositório](docs/desenvolvimento.md): estrutura, testes, CI, release, Dependabot e a
    publicação no Packagist.
 
 ## Licença

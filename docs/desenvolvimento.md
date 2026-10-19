@@ -206,6 +206,56 @@ misturar versões. No processo do PHPUnit, sem o PHAR, `config()` serve para tes
 com formatação proposital (TAB, CRLF, PHP fora do PER-CS) fica em strings dentro dos testes, escrito em pastas
 temporárias durante o teste, e não em arquivos versionados.
 
+### Arquivos do repositório e o Dependabot
+
+Os testes comparam alguns arquivos do repositório com os blocos de código desta documentação. São eles: os três
+workflows, o `dependabot.yml`, o `.gitattributes`, o `.gitignore`, o `.php-cs-fixer.dist.php`, o `composer.json` e o
+`resources/editorconfig`.
+
+O Dependabot abre PRs que mudam alguns desses arquivos, mas não muda a documentação. Se o teste comparasse tudo, o
+CI de todo PR do Dependabot falharia.
+
+Por isso, nos valores que o Dependabot atualiza, o teste confere o **formato**, nunca o valor. Todo o resto continua
+igual, byte a byte.
+
+**Referências de action e de workflow reutilizável.** São as linhas `uses:` dos workflows. No arquivo, cada uma
+termina com `@`, o SHA do commit, um espaço, `# ` e a versão:
+
+- O SHA tem exatamente 40 caracteres, só de `0` a `9` e de `a` a `f` (minúsculas).
+- A versão tem três números separados por ponto, com um `v` opcional na frente: `1.1.0` e `v7.0.1` valem.
+- Antes de comparar, o teste troca, no arquivo e no bloco da doc, cada `@<SHA> # <versão>` por um mesmo texto fixo.
+  Depois disso, o arquivo precisa ser igual ao bloco.
+- O nome da action ou do workflow (o que vem antes do `@`) não é trocado. Ele precisa ser igual ao da doc.
+
+**Restrições de versão do `require-dev`.** No `composer.json`, o arquivo precisa ter as mesmas dependências de
+desenvolvimento da doc, mas a restrição de cada uma pode ser outra. Ela só precisa ser um texto não vazio. O resto
+do `composer.json` é comparado por valor, inclusive o `require` (`"php": ">=8.3"`).
+
+Exemplos, partindo do bloco da doc com `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` e
+`"phpunit/phpunit": "^12.0"`:
+
+| No arquivo | Resultado |
+| --- | --- |
+| `actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v7.1.0` | passa (SHA e versão novos, no formato certo) |
+| `Elavora/.github/.github/workflows/release.yml@<outro SHA de 40> # 1.3.0` no lugar do da `1.1.0` | passa |
+| `actions/checkout@v7` | falha (não é um SHA) |
+| `actions/checkout@3d3c42e # v7.0.1` | falha (SHA curto) |
+| `actions/checkout@3D3C42E5AAC5BA805825DA76410C181273BA90B1 # v7.0.1` | falha (SHA em maiúsculas) |
+| `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` | falha (sem o comentário de versão) |
+| `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # main` | falha (o comentário não é uma versão) |
+| `actions/setup-node@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` | falha (outra action) |
+| `persist-credentials: true` | falha (fora das referências, tudo é comparado por valor) |
+| `"phpunit/phpunit": "^13.0"` | passa |
+| `"phpunit/phpunit": ""` | falha (restrição vazia) |
+| uma dependência a mais ou a menos no `require-dev` | falha |
+| `"php": ">=8.4"` no `require` | falha |
+
+A imagem `ghcr.io/elavora/php-dev:8.3-latest` e a `rhysd/actionlint:1.7.12` são comparadas por valor. O Dependabot
+não mexe nelas, e trocar uma delas é uma decisão que passa pela doc.
+
+Por causa disso, o SHA e a versão que aparecem nos blocos abaixo podem estar atrás dos arquivos. Eles mostram o
+formato. A versão em uso é a do arquivo.
+
 ### CI
 
 Arquivo `.github/workflows/test.yml`:
@@ -371,7 +421,9 @@ updates:
   é escrito pelo Dependabot, em inglês ("bump X from A to B"), e não é configurável.
 - O ecossistema `github-actions` atualiza o `actions/checkout` e os workflows do `.github`: troca o SHA do `uses` e o
   comentário de versão ao lado (`# 1.1.0`) no mesmo PR. Como os chamadores não têm `automation_ref`, não sobra nada
-  para atualizar à mão.
+  para atualizar à mão. A documentação também não precisa mudar: os testes conferem só o formato dessas referências
+  (veja [Arquivos do repositório e o Dependabot](#arquivos-do-repositório-e-o-dependabot)). O mesmo vale para a
+  restrição de versão do `phpunit/phpunit`, que o ecossistema `composer` pode atualizar.
 
 ## Versões
 

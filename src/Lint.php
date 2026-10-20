@@ -68,6 +68,7 @@ final class Lint
     public static function check(string $dir, string $file): ?string
     {
         $command = [PHP_BINARY, '-d', 'display_errors=1', '-d', 'log_errors=0', '-l', $file];
+        // @phpstan-ignore argument.type (o PHPStan não conhece o descritor ['redirect', 1] do proc_open)
         $process = @proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, $dir);
         if (!\is_resource($process)) {
             return 'não foi possível iniciar o php -l';
@@ -83,7 +84,8 @@ final class Lint
         }
 
         $lines = [];
-        foreach (preg_split('/\R/', $output) ?: [] as $line) {
+        $split = preg_split('/\R/', $output);
+        foreach ($split === false ? [] : $split as $line) {
             if (trim($line) === '' || str_starts_with($line, 'Errors parsing ')) {
                 continue;
             }

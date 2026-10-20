@@ -18,10 +18,13 @@ final class Composer
      */
     public static function sync(object $event): void
     {
-        if (!$event->isDevMode()) {
+        if (!method_exists($event, 'isDevMode') || $event->isDevMode() !== true || !method_exists($event, 'getIO')) {
             return;
         }
         $io = $event->getIO();
+        if (!\is_object($io) || !method_exists($io, 'write') || !method_exists($io, 'writeError')) {
+            return;
+        }
 
         try {
             $result = Sync::run((string) getcwd());

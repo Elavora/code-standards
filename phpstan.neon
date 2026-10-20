@@ -1,0 +1,15 @@
+includes:
+  - resources/phpstan.neon
+
+parameters:
+  paths:
+    - src
+    - bin/elavora-standards
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+  ignoreErrors:
+    # O comando recebe do Composer o caminho do autoloader e os argumentos por superglobais.
+    -
+      message: '#^Using \$(GLOBALS|_SERVER) is forbidden, #'
+      path: bin/elavora-standards
+      count: 2

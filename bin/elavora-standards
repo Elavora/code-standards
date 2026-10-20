@@ -14,7 +14,15 @@ declare(strict_types=1);
         if (\is_string($candidate) && is_file($candidate)) {
             require $candidate;
 
-            exit(Elavora\CodeStandards\Cli::main(\array_slice($_SERVER['argv'] ?? [], 1), STDOUT, STDERR));
+            $argv = $_SERVER['argv'] ?? [];
+            $args = [];
+            foreach (\is_array($argv) ? \array_slice($argv, 1) : [] as $arg) {
+                if (\is_string($arg)) {
+                    $args[] = $arg;
+                }
+            }
+
+            exit(Elavora\CodeStandards\Cli::main($args, STDOUT, STDERR));
         }
     }
 

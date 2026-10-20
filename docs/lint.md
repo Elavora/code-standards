@@ -1,6 +1,6 @@
 # Lint de sintaxe PHP
 
-[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Integração com o CI](integracao-ci.md)
+[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Base do PHPStan](phpstan.md)
 
 ## Visão geral
 
@@ -343,4 +343,4 @@ Projetos que já foram criados a partir do skeleton fazem a mesma troca, num PR 
 
 ---
 
-[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Integração com o CI](integracao-ci.md)
+[README](../README.md) · Anterior: [EditorConfig e o comando `sync`](editorconfig.md) · Próximo: [Base do PHPStan](phpstan.md)

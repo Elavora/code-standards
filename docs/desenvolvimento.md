@@ -4,7 +4,7 @@
 
 ## Visão geral
 
-Este repositório é o próprio pacote: o código PHP fica em `src/`, a base do EditorConfig em `resources/` e o comando
+Este repositório é o próprio pacote: o código PHP fica em `src/`, as bases do EditorConfig e do PHPStan em `resources/` e o comando
 em `bin/`. Ele segue as regras que distribui (o `.editorconfig` dele é gerado pelo próprio `sync`, e o PHP-CS-Fixer
 confere o código dele com a própria configuração). Nada é instalado na máquina: os testes rodam na imagem
 `ghcr.io/elavora/php-dev:8.3-0.2.0`, a mesma do CI.
@@ -18,12 +18,14 @@ confere o código dele com a própria configuração). Nada é instalado na máq
 | `src/Lint.php` | `Elavora\CodeStandards\Lint`, o lint de sintaxe ([referência](lint.md#classe-elavoracodestandardslint)) | sim |
 | `src/Cli.php` (ou outro nome interno) | a lógica do comando, se o dev quiser separá-la do `bin/` | sim |
 | `resources/editorconfig` | o `.editorconfig` base | sim |
+| `resources/phpstan.neon` | a base do PHPStan ([referência](phpstan.md#referência)) | sim |
 | `bin/elavora-standards` | o comando, com os subcomandos `sync` e `lint` | sim |
 | `tests/` | testes PHPUnit | não |
 | `docs/`, `README.md` | esta documentação | não (`docs/`) |
 | `.github/` | workflows e `dependabot.yml` | não |
 | `.editorconfig` | gerado pelo `sync` deste repositório, commitado | não |
 | `.php-cs-fixer.dist.php` | configuração do PHP-CS-Fixer deste repositório | não |
+| `phpstan.neon`, `phpstan-bootstrap.php` | configuração do PHPStan deste repositório | não |
 | `phpunit.xml.dist`, `.gitignore`, `.gitattributes` | configuração | não |
 | `LICENSE` | MIT, `Copyright (c) 2026 Elavora`, o mesmo texto do `api-framework` | sim |
 
@@ -40,6 +42,8 @@ dentro e fora do CI:
 /.gitignore export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /docs export-ignore
+/phpstan-bootstrap.php export-ignore
+/phpstan.neon export-ignore
 /phpunit.xml.dist export-ignore
 /tests export-ignore
 ```
@@ -64,15 +68,23 @@ dependências de quem o instala.
 ```json
 {
     "name": "elavora/code-standards",
-    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
+    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig, lint de sintaxe PHP e base do PHPStan",
     "type": "library",
     "license": "MIT",
-    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs"],
+    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs", "phpstan"],
     "require": {
         "php": ">=8.3"
     },
     "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^12.0",
+        "spaze/phpstan-disallowed-calls": "^4.0"
+    },
+    "conflict": {
+        "phpstan/phpstan": "<2.2",
+        "phpstan/phpstan-strict-rules": "<2.0",
+        "spaze/phpstan-disallowed-calls": "<4.0"
     },
     "autoload": {
         "psr-4": {
@@ -89,6 +101,7 @@ dependências de quem o instala.
         "post-install-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "post-update-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "lint": "@php bin/elavora-standards lint . bin/elavora-standards",
+        "analyse": "phpstan analyse --no-progress --memory-limit=512M",
         "test": "phpunit"
     },
     "config": {
@@ -99,12 +112,18 @@ dependências de quem o instala.
 
 - `require` tem só o PHP. Em especial, **não** tem `friendsofphp/php-cs-fixer` nem `composer/composer` (veja
   [Por que o pacote não depende do PHP-CS-Fixer](php-cs-fixer.md#por-que-o-pacote-não-depende-do-php-cs-fixer)).
+- As três ferramentas do PHPStan ficam no `require-dev`: este repositório as usa para se analisar, mas um projeto
+  que instala o pacote não as recebe. O projeto que quer a base as instala no próprio `require-dev` (veja
+  [Base do PHPStan](phpstan.md#1-instalar-as-dependências)).
+- O `conflict` impede que um projeto use a base com uma versão antiga demais das ferramentas. Ele vale para quem
+  instala o pacote, e não só para este repositório.
 - Os scripts `post-install-cmd` e `post-update-cmd` são os mesmos que os projetos usam: aqui o pacote sincroniza o
   próprio `.editorconfig`.
 - O script `lint` usa o próprio lint do pacote. No repositório do pacote, o Composer não cria
   `vendor/bin/elavora-standards` (ele só cria os binários das dependências), por isso o script chama
   `bin/elavora-standards` com `@php`. O `.` mais `bin/elavora-standards` confere o repositório inteiro e também o
   comando, que não tem a extensão `.php`.
+- O script `analyse` é o mesmo que os projetos usam (veja [Base do PHPStan](phpstan.md#3-ligar-o-script-analyse)).
 - `composer validate --strict --no-check-lock` passa sem avisos.
 
 ### Configuração do PHP-CS-Fixer deste repositório
@@ -120,6 +139,58 @@ return Elavora\CodeStandards\PhpCsFixer::config(__DIR__);
 ```
 
 O `sync` nunca reescreve esse arquivo, porque ele já existe.
+
+### Configuração do PHPStan deste repositório
+
+O repositório se analisa com a própria base. Ele inclui `resources/phpstan.neon` direto, porque aqui o pacote não
+está dentro do `vendor/`.
+
+Arquivo `phpstan.neon` deste repositório:
+
+```neon
+includes:
+  - resources/phpstan.neon
+
+parameters:
+  paths:
+    - src
+    - bin/elavora-standards
+  bootstrapFiles:
+    - phpstan-bootstrap.php
+  ignoreErrors:
+    # O comando recebe do Composer o caminho do autoloader e os argumentos por superglobais.
+    -
+      message: '#^Using \$(GLOBALS|_SERVER) is forbidden, #'
+      path: bin/elavora-standards
+      count: 2
+```
+
+- **`paths`.** São analisados o código do pacote (`src/`) e o comando (`bin/elavora-standards`, que não tem a
+  extensão `.php` e por isso entra pelo nome). Os testes não são analisados.
+- **`bootstrapFiles`.** A classe `PhpCsFixer` usa `PhpCsFixer\Config`, `PhpCsFixer\Finder` e
+  `PhpCsFixer\ConfigInterface`, que não estão no `vendor/`. O arquivo de bootstrap carrega o autoloader de dentro do
+  PHAR da imagem, do mesmo jeito que os testes fazem (veja [O que precisa ser coberto](#o-que-precisa-ser-coberto)).
+  Por isso o `composer analyse` só roda na imagem `ghcr.io/elavora/php-dev`.
+- **A exceção do `bin/`.** O Composer passa o caminho do autoloader em `$GLOBALS['_composer_autoload_path']`, e os
+  argumentos chegam em `$_SERVER['argv']`. O comando não tem outro jeito de ler os dois. São exatamente dois usos, um
+  de cada.
+
+Arquivo `phpstan-bootstrap.php`:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+Phar::loadPhar('/usr/local/bin/php-cs-fixer', 'php-cs-fixer.phar');
+require_once 'phar://php-cs-fixer.phar/vendor/autoload.php';
+```
+
+**O código do pacote precisa passar na base.** Quando a base entrou, o PHPStan acusava erros em `bin/`,
+`src/Composer.php`, `src/Lint.php` e `src/PhpCsFixer.php`. Eles são corrigidos no mesmo PR, seguindo
+[Exceções num projeto](phpstan.md#exceções-num-projeto). A correção não muda nenhuma API pública: as assinaturas, os
+códigos de saída e as mensagens continuam como estão nesta documentação. Em especial, `Composer::sync(object $event)`
+continua recebendo `object`, porque o pacote não depende do `composer/composer`.
 
 ## Testes
 
@@ -182,6 +253,14 @@ Os testes usam PHPUnit, ficam em `tests/` e partem desta documentação:
 - `PhpCsFixer::config()` com o `php-cs-fixer` da imagem, conforme
   [Comportamento observável](php-cs-fixer.md#comportamento-observável-com-o-php-cs-fixer-da-imagem), num projeto
   temporário com o stub.
+- A base do PHPStan (`resources/phpstan.neon`), rodando o `vendor/bin/phpstan` deste repositório num projeto
+  temporário. O arquivo do PHPStan desse projeto inclui a base pelo caminho absoluto de `resources/phpstan.neon` e
+  analisa uma pasta com um arquivo PHP. Cada linha da [tabela de exemplos](phpstan.md#exemplos) vira um caso: o teste
+  confere o código de saída (0 quando passa, diferente de 0 quando falha) e, quando falha, a mensagem exata
+  (`--error-format=raw` ou `json`). Também entram: os métodos mágicos com `@property-read` passam
+  ([O que a base confere](phpstan.md#o-que-a-base-confere)), e uma exceção em `ignoreErrors` no formato de
+  [Exceções num projeto](phpstan.md#exceções-num-projeto) libera a chamada naquele arquivo e não em outro.
+- `resources/phpstan.neon`, `phpstan.neon` e `phpstan-bootstrap.php` são iguais aos blocos da documentação.
 
 **Carregar as classes do PHP-CS-Fixer num teste.** Fora do `php-cs-fixer`, as classes `PhpCsFixer\*` não existem.
 Para inspecionar o objeto de `config()` (regras, cache, lista de arquivos), o teste roda um processo PHP separado
@@ -219,7 +298,7 @@ permissions:
 
 jobs:
   test:
-    name: PHPUnit, formatação e actionlint
+    name: PHPUnit, PHPStan, formatação e actionlint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -236,6 +315,7 @@ jobs:
               composer install --no-interaction --no-progress
               git diff --exit-code -- .editorconfig .php-cs-fixer.dist.php
               composer lint
+              composer analyse
               composer test
               php-cs-fixer check --show-progress=none
               git ls-files -z | xargs -0 editorconfig-checker
@@ -250,6 +330,8 @@ jobs:
 - O `git diff --exit-code`, logo depois do `composer install`, garante que o `.editorconfig` commitado é o que o
   `sync` gera com o código da própria branch: quem muda `resources/editorconfig` ou o bloco gerado precisa commitar
   o `.editorconfig` atualizado.
+- O `composer analyse` roda logo depois do lint, na mesma imagem: o arquivo de bootstrap do PHPStan precisa do
+  `php-cs-fixer` da imagem. Qualquer erro do PHPStan faz o CI falhar.
 - A imagem fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`; a troca é manual, junto
   com a dos outros repositórios.
 
@@ -374,6 +456,7 @@ As versões saem automaticamente das labels do PR (veja
 | --- | --- | --- |
 | algo do [contrato](integracao-ci.md#o-contrato) muda de forma incompatível | `upgrade` (major) | trocar o caminho do stub, os marcadores, o nome do callback, a assinatura de `config()` |
 | a formatação de código já formatado muda | `enhancement` (minor) | uma regra nova no PHP-CS-Fixer, uma seção nova ou um valor novo no `.editorconfig` |
+| a base do PHPStan passa a acusar algo que antes passava | `enhancement` (minor) | uma chamada nova na lista de proibidas, uma versão mínima maior de uma ferramenta |
 | funcionalidade nova compatível | `enhancement` (minor) | uma opção nova no comando |
 | correção sem mudar a formatação | `bug` (patch) | uma mensagem errada, um caso de borda do `merge` |
 | só documentação, testes, CI | `documentation`, `tests`... (patch) | |
@@ -395,6 +478,18 @@ liga o script `lint` não vê diferença nenhuma.
 
 Depois da publicação, o `api-framework` e o `api-skeleton` trocam o `tools/lint.php` pelo pacote, cada um no próprio
 PR (veja [Migrar do `tools/lint.php`](lint.md#migrar-do-toolslintphp)).
+
+### 1.2.0: a base do PHPStan
+
+O PR que acrescenta a [base do PHPStan](phpstan.md) leva as labels `enhancement` e `release` e, no merge, gera a
+`1.2.0`. É funcionalidade nova compatível: tudo o que a 1.1.0 entrega continua igual, e um projeto que não inclui a
+base não vê diferença nenhuma.
+
+O `conflict` com versões antigas das ferramentas só afeta um projeto que tenha uma delas instalada numa versão
+abaixo da mínima.
+
+A adoção nos outros repositórios (`api-framework`, `api-skeleton`, `api-datatype-core`...) fica para um PR em cada
+um. Neles, a base troca o `level` que cada um usa hoje pelo `max`, e os erros novos são corrigidos nesse PR.
 
 ### Publicação no Packagist (ação manual, uma vez)
 

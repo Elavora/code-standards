@@ -1,14 +1,22 @@
 {
     "name": "elavora/code-standards",
-    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig e lint de sintaxe PHP",
+    "description": "Regras de formatação e estilo da Elavora: PHP-CS-Fixer (PER-CS), EditorConfig, lint de sintaxe PHP e base do PHPStan",
     "type": "library",
     "license": "MIT",
-    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs"],
+    "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs", "phpstan"],
     "require": {
         "php": ">=8.3"
     },
     "require-dev": {
-        "phpunit/phpunit": "^12.0"
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^12.0",
+        "spaze/phpstan-disallowed-calls": "^4.0"
+    },
+    "conflict": {
+        "phpstan/phpstan": "<2.2",
+        "phpstan/phpstan-strict-rules": "<2.0",
+        "spaze/phpstan-disallowed-calls": "<4.0"
     },
     "autoload": {
         "psr-4": {
@@ -25,6 +33,7 @@
         "post-install-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "post-update-cmd": ["Elavora\\CodeStandards\\Composer::sync"],
         "lint": "@php bin/elavora-standards lint . bin/elavora-standards",
+        "analyse": "phpstan analyse --no-progress --memory-limit=512M",
         "test": "phpunit"
     },
     "config": {

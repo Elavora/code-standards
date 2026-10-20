@@ -27,12 +27,14 @@ final class PhpCsFixer
             );
         }
 
-        $finder = \PhpCsFixer\Finder::create()
-            ->in($dir)
-            ->exclude('vendor')
-            ->ignoreDotFiles(true)
-            ->ignoreVCS(true)
-            ->ignoreVCSIgnored(true);
+        // Os métodos do Finder alteram o próprio objeto. Eles são chamados um a um porque, no PHAR do php-cs-fixer, não
+        // têm tipo de retorno e o PHPStan não sabe que devolvem o mesmo Finder.
+        $finder = new \PhpCsFixer\Finder();
+        $finder->in($dir);
+        $finder->exclude('vendor');
+        $finder->ignoreDotFiles(true);
+        $finder->ignoreVCS(true);
+        $finder->ignoreVCSIgnored(true);
 
         return (new \PhpCsFixer\Config('elavora/code-standards'))
             ->setRules(['@PER-CS' => true])

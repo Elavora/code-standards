@@ -47,6 +47,47 @@ final class RepositoryFilesTest extends TestCase
         ];
         yield 'dependabot.yml' => ['.github/dependabot.yml', 'desenvolvimento.md', 'Arquivo `.github/dependabot.yml`'];
         yield 'resources/editorconfig' => ['resources/editorconfig', 'editorconfig.md', 'Conteúdo de `resources/editorconfig`'];
+        yield 'resources/phpstan.neon' => ['resources/phpstan.neon', 'phpstan.md', 'Conteúdo de `resources/phpstan.neon`'];
+        yield 'phpstan.neon' => ['phpstan.neon', 'desenvolvimento.md', 'Arquivo `phpstan.neon` deste repositório'];
+        yield 'phpstan-bootstrap.php' => ['phpstan-bootstrap.php', 'desenvolvimento.md', 'Arquivo `phpstan-bootstrap.php`'];
+    }
+
+    public function testComposerAnalysePassesInThisRepository(): void
+    {
+        $result = Process::run(['composer', 'analyse', '--no-ansi', '--no-interaction'], Expected::repoRoot());
+
+        self::assertSame(0, $result['code'], $result['stdout'] . $result['stderr']);
+    }
+
+    public function testConflictOnlyHasLowerBoundsForThePhpStanTools(): void
+    {
+        $composer = json_decode(self::read('composer.json'), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertSame(
+            ['phpstan/phpstan' => '<2.2', 'phpstan/phpstan-strict-rules' => '<2.0', 'spaze/phpstan-disallowed-calls' => '<4.0'],
+            $composer['conflict'] ?? null,
+        );
+        self::assertSame('^2.2', $composer['require-dev']['phpstan/phpstan'] ?? null);
+        self::assertSame('^2.0', $composer['require-dev']['phpstan/phpstan-strict-rules'] ?? null);
+        self::assertSame('^4.0', $composer['require-dev']['spaze/phpstan-disallowed-calls'] ?? null);
+        self::assertSame('phpstan analyse --no-progress --memory-limit=512M', $composer['scripts']['analyse'] ?? null);
+    }
+
+    public function testCiRunsComposerAnalyseRightAfterLint(): void
+    {
+        self::assertStringContainsString(
+            "              composer lint\n              composer analyse\n              composer test\n",
+            self::read('.github/workflows/test.yml'),
+        );
+    }
+
+    public function testPhpStanFilesOfThisRepositoryAreExportIgnored(): void
+    {
+        $attributes = self::read('.gitattributes');
+
+        self::assertStringContainsString("/phpstan-bootstrap.php export-ignore\n", $attributes);
+        self::assertStringContainsString("/phpstan.neon export-ignore\n", $attributes);
+        self::assertDoesNotMatchRegularExpression('#^/resources(/|\s).*export-ignore#m', $attributes);
     }
 
     #[DataProvider('filesSpecifiedInTheDocs')]
@@ -130,6 +171,7 @@ final class RepositoryFilesTest extends TestCase
         yield 'src/Composer.php' => ['src/Composer.php'];
         yield 'src/Lint.php' => ['src/Lint.php'];
         yield 'resources/editorconfig' => ['resources/editorconfig'];
+        yield 'resources/phpstan.neon' => ['resources/phpstan.neon'];
         yield 'bin/elavora-standards' => ['bin/elavora-standards'];
     }
 

@@ -240,9 +240,13 @@ Não são proibidos:
 - **`$argv` e `$argc`.** Não são superglobais: só existem no escopo global do script.
 - **Os métodos mágicos.** Veja [O que a base confere](#o-que-a-base-confere).
 
-O operador de crase (`` `ls` ``) também é proibido, pelo `strict-rules`, com a mensagem
-`Backtick operator is not allowed. Use shell_exec() instead.`. Como o `shell_exec()` também é proibido, a crase não
-tem saída: o código usa `proc_open()`.
+O operador de crase (`` `ls` ``) também é proibido. Ele gera duas mensagens na mesma linha:
+
+- a do `strict-rules`: `Backtick operator is not allowed. Use shell_exec() instead.`;
+- a do `spaze/phpstan-disallowed-calls`, porque a crase é um `shell_exec()`:
+  ``Using the backtick operator (`...`) is forbidden because shell_exec() is forbidden, não rode comandos pelo shell; use proc_open() com o comando num array (regra 8).``
+
+Como o `shell_exec()` também é proibido, a crase não tem saída: o código usa `proc_open()`.
 
 O `create_function()` não existe no PHP 8. Nele, o PHPStan acusa `Function create_function not found.` antes da
 regra da base. A entrada continua na base para deixar a proibição escrita.
@@ -270,7 +274,7 @@ Cada linha é o corpo de uma função num arquivo analisado com a base.
 | `return $_ENV['X'] ?? $_GET['x'] ?? null;` | falha duas vezes: uma para `$_ENV` e uma para `$_GET` |
 | `$$nome = 1;` | falha: `Variable variables are not allowed.` (do `strict-rules`) |
 | `return $objeto->$propriedade;` | falha: `Variable property access on <Classe>.` (do `strict-rules`) |
-| `` return `ls`; `` | falha: `Backtick operator is not allowed. Use shell_exec() instead.` (do `strict-rules`) |
+| `` return `ls`; `` | falha duas vezes: `Backtick operator is not allowed. Use shell_exec() instead.` (do `strict-rules`) e ``Using the backtick operator (`...`) is forbidden because shell_exec() is forbidden, não rode comandos pelo shell; use proc_open() com o comando num array (regra 8).`` |
 
 ## Exceções num projeto
 

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   test:
-    name: PHPUnit, formatação e actionlint
+    name: PHPUnit, PHPStan, formatação e actionlint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -27,6 +27,7 @@ jobs:
               composer install --no-interaction --no-progress
               git diff --exit-code -- .editorconfig .php-cs-fixer.dist.php
               composer lint
+              composer analyse
               composer test
               php-cs-fixer check --show-progress=none
               git ls-files -z | xargs -0 editorconfig-checker

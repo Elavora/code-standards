@@ -110,6 +110,19 @@ script existe), acrescente em `scripts`:
 Sem argumentos, o lint confere o projeto inteiro, menos `vendor/` e o que começa com ponto. Se o projeto tinha um
 `tools/lint.php`, apague-o. Pastas, exclusões e a migração estão em [Lint de sintaxe PHP](lint.md).
 
+### 5. Ligar a base do PHPStan (opcional)
+
+Com o pacote em `^1.2`, o projeto pode incluir a base do PHPStan da Elavora. São três passos, descritos em
+[Base do PHPStan](phpstan.md#uso-num-projeto):
+
+1. Instalar no `require-dev` o `phpstan/phpstan`, o `phpstan/phpstan-strict-rules` e o
+   `spaze/phpstan-disallowed-calls`.
+2. Incluir `vendor/elavora/code-standards/resources/phpstan.neon` em `includes`, no arquivo do PHPStan do projeto.
+3. Ligar o script `analyse`, que o CI de qualidade roda quando o script existe.
+
+A base usa `level: max`. Um projeto que estava num nível mais baixo provavelmente vai ter erros novos. A adoção
+corrige esses erros no mesmo PR, sem baseline.
+
 ### Quando o projeto já tem os arquivos
 
 - **`.php-cs-fixer.dist.php` já existe:** o pacote nunca mexe nele. Troque o conteúdo à mão pelo
@@ -133,6 +146,7 @@ php-cs-fixer fix                                  # formata com a configuração
 php-cs-fixer check                                # só confere, sem alterar (sai com 8 se houver o que corrigir)
 git ls-files -z | xargs -0 editorconfig-checker   # confere os arquivos versionados contra o .editorconfig
 composer lint                                     # confere a sintaxe dos arquivos PHP (com o passo 4)
+composer analyse                                  # roda o PHPStan com a base (com o passo 5)
 ```
 
 No VS Code do devcontainer, a extensão do PHP-CS-Fixer encontra o `.php-cs-fixer.dist.php` na raiz e formata ao
@@ -150,6 +164,10 @@ salvar.
 
 Uma melhoria no lint também chega pelo mesmo PR do Dependabot, sem mudar nenhum arquivo do projeto: o script `lint`
 só chama o comando do pacote.
+
+Uma mudança na base do PHPStan (uma chamada a mais na lista de proibidas, por exemplo) também chega pelo PR do
+Dependabot. O arquivo do PHPStan do projeto só inclui a base, então nada muda nele. O efeito aparece no
+`composer analyse` do CI desse PR, que pode acusar erros novos.
 
 Uma versão nova das regras do PHP-CS-Fixer (uma regra a mais, por exemplo) não muda nenhum arquivo do projeto: o
 `.php-cs-fixer.dist.php` só carrega a configuração do pacote. O efeito aparece na próxima formatação, que pode gerar

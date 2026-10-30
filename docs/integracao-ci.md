@@ -1,6 +1,6 @@
 # Integração com o CI
 
-[README](../README.md) · Anterior: [Lint de sintaxe PHP](lint.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
+[README](../README.md) · Anterior: [Base do PHPStan](phpstan.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
 
 ## Visão geral
 
@@ -33,6 +33,7 @@ do pacote (versão major, label `upgrade`) e precisa ser combinada com o `Elavor
 | Configuração do `editorconfig-checker` | o pacote não traz `.editorconfig-checker.json` |
 | Versão do PHP-CS-Fixer de referência | a da imagem `ghcr.io/elavora/php-dev:8.3-latest`, que o workflow usa (as versões das ferramentas estão no [Elavora/devcontainers](https://github.com/Elavora/devcontainers/blob/main/docs/ferramentas-de-qualidade.md)) |
 | Lint de sintaxe (a partir da 1.1.0) | o script `lint` do projeto, `"lint": "elavora-standards lint"`, que o workflow roda como `composer lint` quando o script existe; códigos de saída 0, 1 e 2 (veja a [referência](lint.md#referência)); exige o pacote em `^1.1` |
+| Base do PHPStan (a partir da 1.2.0) | `vendor/elavora/code-standards/resources/phpstan.neon`, incluída pelo arquivo do PHPStan do projeto; o workflow roda `composer analyse` quando o script existe; exige o pacote em `^1.2` (veja a [referência](phpstan.md#referência)) |
 | Pastas que a configuração do PHP-CS-Fixer ignora | `vendor/` (qualquer nível), tudo que começa com ponto (inclusive `.elavora/`), o que o `.gitignore` ignora |
 
 ## O que o workflow precisa respeitar
@@ -54,6 +55,10 @@ do pacote (versão major, label `upgrade`) e precisa ser combinada com o `Elavor
    `elavora-standards lint` direto: as pastas e as exclusões ficam na linha do script de cada projeto. Como o lint
    roda com as dependências nas versões mínimas, o projeto precisa do pacote em `^1.1` (veja
    [Uso num projeto](lint.md#uso-num-projeto)).
+7. **O PHPStan também é do projeto.** O workflow roda `composer analyse` só quando o script existe, como já faz
+   hoje. Ele não passa `--level` nem `--configuration` na linha de comando: o nível vem da base, e o arquivo é o do
+   projeto. Nada muda no `php-quality.yml` para a base funcionar. A base foi conferida com as versões mínimas das três
+   dependências, que é como o workflow instala.
 
 ### O `.editorconfig` muda no CI
 
@@ -76,4 +81,4 @@ da `1.1.0`, ele aceita também `Elavora/code-standards`. Este repositório chama
 
 ---
 
-[README](../README.md) · Anterior: [Lint de sintaxe PHP](lint.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)
+[README](../README.md) · Anterior: [Base do PHPStan](phpstan.md) · Próximo: [Desenvolvimento deste repositório](desenvolvimento.md)

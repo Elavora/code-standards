@@ -1,0 +1,54 @@
+# Base do PHPStan da Elavora (elavora/code-standards). Veja docs/phpstan.md.
+includes:
+  - %rootDir%/../phpstan-strict-rules/rules.neon
+  - %rootDir%/../../spaze/phpstan-disallowed-calls/extension.neon
+
+parameters:
+  level: max
+
+  disallowedFunctionCalls:
+    -
+      function:
+        - 'eval()'
+        - 'create_function()'
+      message: 'não execute código escrito num texto (regra 8)'
+    -
+      function:
+        - 'exec()'
+        - 'shell_exec()'
+        - 'system()'
+        - 'passthru()'
+      message: 'não rode comandos pelo shell; use proc_open() com o comando num array (regra 8)'
+    -
+      function: 'extract()'
+      message: 'não crie variáveis a partir de um array (regra 9)'
+    -
+      function: 'json_decode()'
+      message: 'passe JSON_THROW_ON_ERROR em $flags (regra 7)'
+      allowParamFlagsAnywhere:
+        -
+          position: 4
+          name: 'flags'
+          value: 4194304 # JSON_THROW_ON_ERROR
+    -
+      function: 'json_encode()'
+      message: 'passe JSON_THROW_ON_ERROR em $flags (regra 7)'
+      allowParamFlagsAnywhere:
+        -
+          position: 2
+          name: 'flags'
+          value: 4194304 # JSON_THROW_ON_ERROR
+
+  disallowedSuperglobals:
+    -
+      superglobal:
+        - '$GLOBALS'
+        - '$_SERVER'
+        - '$_GET'
+        - '$_POST'
+        - '$_FILES'
+        - '$_COOKIE'
+        - '$_SESSION'
+        - '$_REQUEST'
+        - '$_ENV'
+      message: 'receba o valor por parâmetro (regra 6)'

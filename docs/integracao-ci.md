@@ -10,7 +10,7 @@ projeto, e as ferramentas da imagem `ghcr.io/elavora/php-dev`.
 
 ```
 PR no projeto ──► php-quality.yml (Elavora/.github)
-                    ├─ imagem ghcr.io/elavora/php-dev:8.3-0.2.0  → php-cs-fixer 3.95.27, editorconfig-checker 4.0.2
+                    ├─ imagem ghcr.io/elavora/php-dev:8.3-latest → php-cs-fixer e editorconfig-checker
                     ├─ composer install                         → instala elavora/code-standards e roda o sync
                     ├─ php-cs-fixer                             → lê .php-cs-fixer.dist.php → config do pacote
                     └─ editorconfig-checker                     → lê .editorconfig (bloco gerado pelo pacote)
@@ -31,7 +31,7 @@ do pacote (versão major, label `upgrade`) e precisa ser combinada com o `Elavor
 | Comando de sincronização | `vendor/bin/elavora-standards sync` (códigos de saída 0, 1 e 2, veja a [referência](editorconfig.md#comando-vendorbinelavora-standards)) |
 | Arquivos que a sincronização pode criar ou alterar | só `.editorconfig` e `.php-cs-fixer.dist.php`, na raiz |
 | Configuração do `editorconfig-checker` | o pacote não traz `.editorconfig-checker.json` |
-| Versão do PHP-CS-Fixer de referência | a da imagem `ghcr.io/elavora/php-dev` usada pelo workflow (3.95.27 na `8.3-0.2.0`) |
+| Versão do PHP-CS-Fixer de referência | a da imagem `ghcr.io/elavora/php-dev:8.3-latest`, que o workflow usa (as versões das ferramentas estão no [Elavora/devcontainers](https://github.com/Elavora/devcontainers/blob/main/docs/ferramentas-de-qualidade.md)) |
 | Lint de sintaxe (a partir da 1.1.0) | o script `lint` do projeto, `"lint": "elavora-standards lint"`, que o workflow roda como `composer lint` quando o script existe; códigos de saída 0, 1 e 2 (veja a [referência](lint.md#referência)); exige o pacote em `^1.1` |
 | Pastas que a configuração do PHP-CS-Fixer ignora | `vendor/` (qualquer nível), tudo que começa com ponto (inclusive `.elavora/`), o que o `.gitignore` ignora |
 

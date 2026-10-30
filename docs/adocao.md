@@ -126,7 +126,7 @@ Sem argumentos, o lint confere o projeto inteiro, menos `vendor/` e o que começ
 
 ## No dia a dia
 
-Dentro do devcontainer (imagem `ghcr.io/elavora/php-dev:8.3-0.2.0` ou mais nova), na raiz do projeto:
+Dentro do devcontainer (imagem `ghcr.io/elavora/php-dev:8.3-latest`, a mesma do CI), na raiz do projeto:
 
 ```sh
 php-cs-fixer fix                                  # formata com a configuração do pacote

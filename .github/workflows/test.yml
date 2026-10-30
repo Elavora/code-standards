@@ -21,7 +21,7 @@ jobs:
       - name: Testes, formatação e EditorConfig
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer \
-            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c '
+            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c '
               set -e
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress

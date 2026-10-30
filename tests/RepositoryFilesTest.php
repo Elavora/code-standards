@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Elavora\CodeStandards\Tests;
 
 use Elavora\CodeStandards\EditorConfig;
+use Elavora\CodeStandards\Tests\Support\DependabotRefs;
 use Elavora\CodeStandards\Tests\Support\Doc;
 use Elavora\CodeStandards\Tests\Support\Expected;
 use Elavora\CodeStandards\Tests\Support\Process;
@@ -90,10 +91,129 @@ final class RepositoryFilesTest extends TestCase
         self::assertDoesNotMatchRegularExpression('#^/resources(/|\s).*export-ignore#m', $attributes);
     }
 
+    /**
+     * Nos workflows, as referências `@<SHA> # <versão>` das linhas `uses:` são conferidas só pelo formato
+     * (docs/desenvolvimento.md, "Arquivos do repositório e o Dependabot"); o resto é comparado byte a byte.
+     */
     #[DataProvider('filesSpecifiedInTheDocs')]
     public function testFileMatchesTheDocumentation(string $file, string $doc, string $marker): void
     {
-        self::assertSame(Doc::codeBlockAfter($doc, $marker), self::read($file));
+        self::assertSame(
+            DependabotRefs::normalizeUses(Doc::codeBlockAfter($doc, $marker)),
+            DependabotRefs::normalizeUses(self::read($file)),
+        );
+    }
+
+    /** @return iterable<string, array{0: string, 1: string}> */
+    public static function workflowsSpecifiedInTheDocs(): iterable
+    {
+        yield 'test.yml' => ['.github/workflows/test.yml', 'Arquivo `.github/workflows/test.yml`'];
+        yield 'release.yml' => ['.github/workflows/release.yml', 'Arquivo `.github/workflows/release.yml`'];
+        yield 'sync-labels.yml' => ['.github/workflows/sync-labels.yml', 'Arquivo `.github/workflows/sync-labels.yml`'];
+    }
+
+    #[DataProvider('workflowsSpecifiedInTheDocs')]
+    public function testEveryUsesLineHasShaAndVersionFormat(string $file, string $marker): void
+    {
+        foreach (['arquivo' => self::read($file), 'doc' => Doc::codeBlockAfter('desenvolvimento.md', $marker)] as $source => $text) {
+            preg_match_all('/^\s*(?:-\s+)?uses:.*$/m', $text, $matches);
+            self::assertNotEmpty($matches[0], "{$file} ({$source}) sem linha uses:");
+            foreach ($matches[0] as $line) {
+                self::assertStringEndsWith(
+                    DependabotRefs::PLACEHOLDER,
+                    DependabotRefs::normalizeUses($line),
+                    "{$file} ({$source}): referência fora do formato @<SHA de 40> # <versão>: {$line}",
+                );
+            }
+        }
+    }
+
+    public function testImagesAreComparedByValue(): void
+    {
+        $workflow = self::read('.github/workflows/test.yml');
+
+        self::assertStringContainsString('ghcr.io/elavora/php-dev:8.3-latest', $workflow);
+        self::assertStringNotContainsString('8.3-0.', $workflow);
+        self::assertStringContainsString('rhysd/actionlint:1.7.12', $workflow);
+    }
+
+    /**
+     * Tabela de exemplos de "Arquivos do repositório e o Dependabot", partindo do bloco da doc com
+     * `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`.
+     *
+     * @return iterable<string, array{0: string, 1: string, 2: bool}>
+     */
+    public static function usesExamples(): iterable
+    {
+        $doc = "      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n"
+            . "        with:\n          persist-credentials: false\n";
+        $reusable = "    uses: Elavora/.github/.github/workflows/release.yml@a24df9fa1816423221a4ad0aaf6a416da2087c41 # 1.1.0\n";
+        $replace = static fn(string $to): string => str_replace(
+            'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
+            $to,
+            $doc,
+        );
+
+        yield 'SHA e versão novos' => [$doc, $replace('actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v7.1.0'), true];
+        yield 'workflow reutilizável em 1.3.0' => [
+            $reusable,
+            "    uses: Elavora/.github/.github/workflows/release.yml@0123456789abcdef0123456789abcdef01234567 # 1.3.0\n",
+            true,
+        ];
+        yield 'tag no lugar do SHA' => [$doc, $replace('actions/checkout@v7'), false];
+        yield 'SHA curto' => [$doc, $replace('actions/checkout@3d3c42e # v7.0.1'), false];
+        yield 'SHA em maiúsculas' => [$doc, $replace('actions/checkout@3D3C42E5AAC5BA805825DA76410C181273BA90B1 # v7.0.1'), false];
+        yield 'sem comentário de versão' => [$doc, $replace('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'), false];
+        yield 'comentário não é versão' => [$doc, $replace('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # main'), false];
+        yield 'outra action' => [$doc, $replace('actions/setup-node@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1'), false];
+        yield 'fora das referências' => [$doc, str_replace('persist-credentials: false', 'persist-credentials: true', $doc), false];
+    }
+
+    #[DataProvider('usesExamples')]
+    public function testUsesExamplesFromTheDocumentation(string $doc, string $file, bool $passes): void
+    {
+        self::assertSame($passes, DependabotRefs::normalizeUses($doc) === DependabotRefs::normalizeUses($file));
+    }
+
+    /** @return iterable<string, array{0: callable(array<string, mixed>): array<string, mixed>, 1: bool}> */
+    public static function composerExamples(): iterable
+    {
+        yield 'mesma restrição' => [static fn(array $c): array => $c, true];
+        yield 'phpunit em ^13.0' => [static function (array $c): array {
+            $c['require-dev']['phpunit/phpunit'] = '^13.0';
+
+            return $c;
+        }, true];
+        yield 'restrição vazia' => [static function (array $c): array {
+            $c['require-dev']['phpunit/phpunit'] = '';
+
+            return $c;
+        }, false];
+        yield 'dependência a mais' => [static function (array $c): array {
+            $c['require-dev']['vendor/extra'] = '^1.0';
+
+            return $c;
+        }, false];
+        yield 'dependência a menos' => [static function (array $c): array {
+            $c['require-dev'] = [];
+
+            return $c;
+        }, false];
+        yield 'php >=8.4 no require' => [static function (array $c): array {
+            $c['require']['php'] = '>=8.4';
+
+            return $c;
+        }, false];
+    }
+
+    /** @param callable(array<string, mixed>): array<string, mixed> $change */
+    #[DataProvider('composerExamples')]
+    public function testComposerExamplesFromTheDocumentation(callable $change, bool $passes): void
+    {
+        $expected = json_decode(Doc::codeBlockAfter('desenvolvimento.md', '### `composer.json`'), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('^12.0', $expected['require-dev']['phpunit/phpunit']);
+
+        self::assertSame($passes, DependabotRefs::composerMatches($expected, $change($expected)));
     }
 
     public function testResourcesEditorconfigIsTheExpectedBase(): void
@@ -106,7 +226,10 @@ final class RepositoryFilesTest extends TestCase
         $expected = json_decode(Doc::codeBlockAfter('desenvolvimento.md', '### `composer.json`'), true, 512, JSON_THROW_ON_ERROR);
         $actual = json_decode(self::read('composer.json'), true, 512, JSON_THROW_ON_ERROR);
 
-        self::assertEquals($expected, $actual);
+        self::assertTrue(
+            DependabotRefs::composerMatches($expected, $actual),
+            'composer.json difere da doc (o require-dev só pode mudar a restrição de cada dependência)',
+        );
     }
 
     public function testComposerJsonRequiresOnlyPhp(): void

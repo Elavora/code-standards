@@ -27,7 +27,7 @@ O pacote entrega as **regras** e o lint, que só precisa do próprio PHP. As **f
 
 ```
 Elavora/code-standards   → regras (este pacote, no require-dev de cada projeto)
-Elavora/devcontainers    → imagem php-dev com php-cs-fixer 3.95.27 e editorconfig-checker 4.0.2
+Elavora/devcontainers    → imagem php-dev (8.3-latest) com php-cs-fixer e editorconfig-checker
 Elavora/.github          → workflow de qualidade do CI, que usa as regras e as ferramentas
 ```
 

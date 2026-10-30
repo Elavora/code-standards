@@ -7,7 +7,7 @@
 Este repositório é o próprio pacote: o código PHP fica em `src/`, as bases do EditorConfig e do PHPStan em `resources/` e o comando
 em `bin/`. Ele segue as regras que distribui (o `.editorconfig` dele é gerado pelo próprio `sync`, e o PHP-CS-Fixer
 confere o código dele com a própria configuração). Nada é instalado na máquina: os testes rodam na imagem
-`ghcr.io/elavora/php-dev:8.3-0.2.0`, a mesma do CI.
+`ghcr.io/elavora/php-dev:8.3-latest`, a mesma do CI.
 
 ## Estrutura
 
@@ -199,10 +199,14 @@ continua recebendo `object`, porque o pacote não depende do `composer/composer`
 Na raiz do repositório, no PowerShell (no Git Bash, a conversão de caminhos quebra o `docker run`):
 
 ```powershell
-docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c "composer install --no-interaction && composer test"
+docker pull ghcr.io/elavora/php-dev:8.3-latest
+docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c "composer install --no-interaction && composer test"
 ```
 
-No devcontainer, basta `composer install` e `composer test`.
+O `docker pull` baixa a `8.3-latest` atual. Sem ele, o Docker usa a cópia local, que pode ser mais antiga que a do CI.
+
+O repositório não tem `.devcontainer/`. Num devcontainer com a imagem `ghcr.io/elavora/php-dev:8.3-latest`, basta
+`composer install` e `composer test`.
 
 ### O que precisa ser coberto
 
@@ -281,6 +285,56 @@ misturar versões. No processo do PHPUnit, sem o PHAR, `config()` serve para tes
 com formatação proposital (TAB, CRLF, PHP fora do PER-CS) fica em strings dentro dos testes, escrito em pastas
 temporárias durante o teste, e não em arquivos versionados.
 
+### Arquivos do repositório e o Dependabot
+
+Os testes comparam alguns arquivos do repositório com os blocos de código desta documentação. São eles: os três
+workflows, o `dependabot.yml`, o `.gitattributes`, o `.gitignore`, o `.php-cs-fixer.dist.php`, o `composer.json` e o
+`resources/editorconfig`.
+
+O Dependabot abre PRs que mudam alguns desses arquivos, mas não muda a documentação. Se o teste comparasse tudo, o
+CI de todo PR do Dependabot falharia.
+
+Por isso, nos valores que o Dependabot atualiza, o teste confere o **formato**, nunca o valor. Todo o resto continua
+igual, byte a byte.
+
+**Referências de action e de workflow reutilizável.** São as linhas `uses:` dos workflows. No arquivo, cada uma
+termina com `@`, o SHA do commit, um espaço, `# ` e a versão:
+
+- O SHA tem exatamente 40 caracteres, só de `0` a `9` e de `a` a `f` (minúsculas).
+- A versão tem três números separados por ponto, com um `v` opcional na frente: `1.1.0` e `v7.0.1` valem.
+- Antes de comparar, o teste troca, no arquivo e no bloco da doc, cada `@<SHA> # <versão>` por um mesmo texto fixo.
+  Depois disso, o arquivo precisa ser igual ao bloco.
+- O nome da action ou do workflow (o que vem antes do `@`) não é trocado. Ele precisa ser igual ao da doc.
+
+**Restrições de versão do `require-dev`.** No `composer.json`, o arquivo precisa ter as mesmas dependências de
+desenvolvimento da doc, mas a restrição de cada uma pode ser outra. Ela só precisa ser um texto não vazio. O resto
+do `composer.json` é comparado por valor, inclusive o `require` (`"php": ">=8.3"`).
+
+Exemplos, partindo do bloco da doc com `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` e
+`"phpunit/phpunit": "^12.0"`:
+
+| No arquivo | Resultado |
+| --- | --- |
+| `actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v7.1.0` | passa (SHA e versão novos, no formato certo) |
+| `Elavora/.github/.github/workflows/release.yml@<outro SHA de 40> # 1.3.0` no lugar do da `1.1.0` | passa |
+| `actions/checkout@v7` | falha (não é um SHA) |
+| `actions/checkout@3d3c42e # v7.0.1` | falha (SHA curto) |
+| `actions/checkout@3D3C42E5AAC5BA805825DA76410C181273BA90B1 # v7.0.1` | falha (SHA em maiúsculas) |
+| `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1` | falha (sem o comentário de versão) |
+| `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # main` | falha (o comentário não é uma versão) |
+| `actions/setup-node@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` | falha (outra action) |
+| `persist-credentials: true` | falha (fora das referências, tudo é comparado por valor) |
+| `"phpunit/phpunit": "^13.0"` | passa |
+| `"phpunit/phpunit": ""` | falha (restrição vazia) |
+| uma dependência a mais ou a menos no `require-dev` | falha |
+| `"php": ">=8.4"` no `require` | falha |
+
+A imagem `ghcr.io/elavora/php-dev:8.3-latest` e a `rhysd/actionlint:1.7.12` são comparadas por valor. O Dependabot
+não mexe nelas, e trocar uma delas é uma decisão que passa pela doc.
+
+Por causa disso, o SHA e a versão que aparecem nos blocos abaixo podem estar atrás dos arquivos. Eles mostram o
+formato. A versão em uso é a do arquivo.
+
 ### CI
 
 Arquivo `.github/workflows/test.yml`:
@@ -309,7 +363,7 @@ jobs:
       - name: Testes, formatação e EditorConfig
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer \
-            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-0.2.0 sh -c '
+            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c '
               set -e
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress
@@ -332,8 +386,14 @@ jobs:
   o `.editorconfig` atualizado.
 - O `composer analyse` roda logo depois do lint, na mesma imagem: o arquivo de bootstrap do PHPStan precisa do
   `php-cs-fixer` da imagem. Qualquer erro do PHPStan faz o CI falhar.
-- A imagem fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`; a troca é manual, junto
-  com a dos outros repositórios.
+- A imagem é a `8.3-latest`. O `Elavora/devcontainers` move essa referência a cada versão estável, e uma beta nunca
+  a move (veja [Imagem do job](https://github.com/Elavora/.github/blob/main/docs/qualidade.md#imagem-do-job)). Assim,
+  o CI acompanha as versões novas da imagem sem PR de troca.
+- Uma estável nova da imagem vale já na próxima execução do CI. Se ela quebrar o CI, um PR troca a `8.3-latest` pela
+  última versão que funcionava (por exemplo, `8.3-0.3.0`). Quando o `devcontainers` lançar a correção, outro PR volta
+  para a `8.3-latest`.
+- O `rhysd/actionlint:1.7.12` fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`, então
+  a troca dessa versão é manual.
 
 Na versão 1.0.0, este repositório não usa o workflow de qualidade central (`php-quality.yml`), porque esse workflow
 depende deste pacote já publicado no Packagist. A adoção fica para um PR depois da primeira publicação.
@@ -443,7 +503,9 @@ updates:
   é escrito pelo Dependabot, em inglês ("bump X from A to B"), e não é configurável.
 - O ecossistema `github-actions` atualiza o `actions/checkout` e os workflows do `.github`: troca o SHA do `uses` e o
   comentário de versão ao lado (`# 1.1.0`) no mesmo PR. Como os chamadores não têm `automation_ref`, não sobra nada
-  para atualizar à mão.
+  para atualizar à mão. A documentação também não precisa mudar: os testes conferem só o formato dessas referências
+  (veja [Arquivos do repositório e o Dependabot](#arquivos-do-repositório-e-o-dependabot)). O mesmo vale para a
+  restrição de versão do `phpunit/phpunit`, que o ecossistema `composer` pode atualizar.
 
 ## Versões
 

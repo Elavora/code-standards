@@ -132,8 +132,8 @@ final class RepositoryFilesTest extends TestCase
     {
         $workflow = self::read('.github/workflows/test.yml');
 
-        self::assertStringContainsString('ghcr.io/elavora/php-dev:8.3-latest', $workflow);
-        self::assertStringNotContainsString('8.3-0.', $workflow);
+        self::assertStringContainsString('ghcr.io/elavora/php-dev:8.4-latest', $workflow);
+        self::assertStringNotContainsString('8.4-0.', $workflow);
         self::assertStringContainsString('rhysd/actionlint:1.7.12', $workflow);
     }
 
@@ -199,8 +199,8 @@ final class RepositoryFilesTest extends TestCase
 
             return $c;
         }, false];
-        yield 'php >=8.4 no require' => [static function (array $c): array {
-            $c['require']['php'] = '>=8.4';
+        yield 'php >=8.3 no require' => [static function (array $c): array {
+            $c['require']['php'] = '>=8.3';
 
             return $c;
         }, false];
@@ -236,7 +236,7 @@ final class RepositoryFilesTest extends TestCase
     {
         $composer = json_decode(self::read('composer.json'), true, 512, JSON_THROW_ON_ERROR);
 
-        self::assertSame(['php' => '>=8.3'], $composer['require']);
+        self::assertSame(['php' => '>=8.4'], $composer['require']);
         self::assertArrayNotHasKey('friendsofphp/php-cs-fixer', $composer['require-dev'] ?? []);
         self::assertArrayNotHasKey('composer/composer', $composer['require-dev'] ?? []);
     }

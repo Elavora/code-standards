@@ -60,7 +60,7 @@ final class Expected
     /** Um arquivo PHP com erro de sintaxe (chave sem fechar). */
     public const PHP_BROKEN = "<?php\nfunction f()\n{\n";
 
-    /** Compila com um Deprecated no PHP 8.3, mas o php -l sai com 0 (docs/lint.md). */
+    /** Compila com um Deprecated no PHP 8.4, mas o php -l sai com 0 (docs/lint.md). */
     public const PHP_DEPRECATED = "<?php function f(\$a = 1, \$b) {}\n";
 
     public static function lintOk(int $count): string

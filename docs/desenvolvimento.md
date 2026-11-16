@@ -7,7 +7,7 @@
 Este repositório é o próprio pacote: o código PHP fica em `src/`, as bases do EditorConfig e do PHPStan em `resources/` e o comando
 em `bin/`. Ele segue as regras que distribui (o `.editorconfig` dele é gerado pelo próprio `sync`, e o PHP-CS-Fixer
 confere o código dele com a própria configuração). Nada é instalado na máquina: os testes rodam na imagem
-`ghcr.io/elavora/php-dev:8.3-latest`, a mesma do CI.
+`ghcr.io/elavora/php-dev:8.4-latest`, a mesma do CI.
 
 ## Estrutura
 
@@ -73,7 +73,7 @@ dependências de quem o instala.
     "license": "MIT",
     "keywords": ["coding-standard", "editorconfig", "lint", "php-cs-fixer", "per-cs", "phpstan"],
     "require": {
-        "php": ">=8.3"
+        "php": ">=8.4"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.2",
@@ -199,13 +199,13 @@ continua recebendo `object`, porque o pacote não depende do `composer/composer`
 Na raiz do repositório, no PowerShell (no Git Bash, a conversão de caminhos quebra o `docker run`):
 
 ```powershell
-docker pull ghcr.io/elavora/php-dev:8.3-latest
-docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c "composer install --no-interaction && composer test"
+docker pull ghcr.io/elavora/php-dev:8.4-latest
+docker run --rm -v "${PWD}:/work" -w /work ghcr.io/elavora/php-dev:8.4-latest sh -c "composer install --no-interaction && composer test"
 ```
 
-O `docker pull` baixa a `8.3-latest` atual. Sem ele, o Docker usa a cópia local, que pode ser mais antiga que a do CI.
+O `docker pull` baixa a `8.4-latest` atual. Sem ele, o Docker usa a cópia local, que pode ser mais antiga que a do CI.
 
-O repositório não tem `.devcontainer/`. Num devcontainer com a imagem `ghcr.io/elavora/php-dev:8.3-latest`, basta
+O repositório não tem `.devcontainer/`. Num devcontainer com a imagem `ghcr.io/elavora/php-dev:8.4-latest`, basta
 `composer install` e `composer test`.
 
 ### O que precisa ser coberto
@@ -308,7 +308,7 @@ termina com `@`, o SHA do commit, um espaço, `# ` e a versão:
 
 **Restrições de versão do `require-dev`.** No `composer.json`, o arquivo precisa ter as mesmas dependências de
 desenvolvimento da doc, mas a restrição de cada uma pode ser outra. Ela só precisa ser um texto não vazio. O resto
-do `composer.json` é comparado por valor, inclusive o `require` (`"php": ">=8.3"`).
+do `composer.json` é comparado por valor, inclusive o `require` (`"php": ">=8.4"`).
 
 Exemplos, partindo do bloco da doc com `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` e
 `"phpunit/phpunit": "^12.0"`:
@@ -329,7 +329,7 @@ Exemplos, partindo do bloco da doc com `actions/checkout@3d3c42e5aac5ba805825da7
 | uma dependência a mais ou a menos no `require-dev` | falha |
 | `"php": ">=8.4"` no `require` | falha |
 
-A imagem `ghcr.io/elavora/php-dev:8.3-latest` e a `rhysd/actionlint:1.7.12` são comparadas por valor. O Dependabot
+A imagem `ghcr.io/elavora/php-dev:8.4-latest` e a `rhysd/actionlint:1.7.12` são comparadas por valor. O Dependabot
 não mexe nelas, e trocar uma delas é uma decisão que passa pela doc.
 
 Por causa disso, o SHA e a versão que aparecem nos blocos abaixo podem estar atrás dos arquivos. Eles mostram o
@@ -363,7 +363,7 @@ jobs:
       - name: Testes, formatação e EditorConfig
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e COMPOSER_HOME=/tmp/composer \
-            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.3-latest sh -c '
+            -v "$PWD:/work" -w /work ghcr.io/elavora/php-dev:8.4-latest sh -c '
               set -e
               composer validate --strict --no-check-lock
               composer install --no-interaction --no-progress
@@ -386,12 +386,12 @@ jobs:
   o `.editorconfig` atualizado.
 - O `composer analyse` roda logo depois do lint, na mesma imagem: o arquivo de bootstrap do PHPStan precisa do
   `php-cs-fixer` da imagem. Qualquer erro do PHPStan faz o CI falhar.
-- A imagem é a `8.3-latest`. O `Elavora/devcontainers` move essa referência a cada versão estável, e uma beta nunca
+- A imagem é a `8.4-latest`. O `Elavora/devcontainers` move essa referência a cada versão estável, e uma beta nunca
   a move (veja [Imagem do job](https://github.com/Elavora/.github/blob/main/docs/qualidade.md#imagem-do-job)). Assim,
   o CI acompanha as versões novas da imagem sem PR de troca.
-- Uma estável nova da imagem vale já na próxima execução do CI. Se ela quebrar o CI, um PR troca a `8.3-latest` pela
-  última versão que funcionava (por exemplo, `8.3-0.3.0`). Quando o `devcontainers` lançar a correção, outro PR volta
-  para a `8.3-latest`.
+- Uma estável nova da imagem vale já na próxima execução do CI. Se ela quebrar o CI, um PR troca a `8.4-latest` pela
+  última versão que funcionava (por exemplo, `8.4-0.3.0`). Quando o `devcontainers` lançar a correção, outro PR volta
+  para a `8.4-latest`.
 - O `rhysd/actionlint:1.7.12` fica numa versão fixa. O Dependabot não atualiza imagens usadas em `docker run`, então
   a troca dessa versão é manual.
 

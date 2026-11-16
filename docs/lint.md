@@ -228,7 +228,7 @@ Para cada arquivo, o lint roda um processo separado, sem shell:
 <PHP_BINARY> -d display_errors=1 -d log_errors=0 -l <caminho mostrado>
 ```
 
-- `PHP_BINARY` é o PHP que está rodando o comando. Na imagem `ghcr.io/elavora/php-dev:8.3-*`, o PHP 8.3, que é a
+- `PHP_BINARY` é o PHP que está rodando o comando. Na imagem `ghcr.io/elavora/php-dev:8.4-*`, o PHP 8.4, que é a
   versão que o lint garante.
 - O processo roda com a pasta do projeto como pasta atual, para que a mensagem do PHP traga o caminho mostrado.
 - `display_errors=1` e `log_errors=0` fazem a mensagem sair uma vez só. Na imagem, os dois estão ligados, e sem isso
@@ -238,7 +238,7 @@ Para cada arquivo, o lint roda um processo separado, sem shell:
 - Se o processo sair com erro sem escrever nada, a mensagem é `o php -l saiu com o código <n>`. Se o processo não
   puder ser iniciado, a mensagem é `não foi possível iniciar o php -l`. Nos dois casos, o arquivo conta como erro.
 - Um aviso do PHP com código 0 não é erro e não aparece. Exemplo: `<?php function f($a = 1, $b) {}` gera, no PHP
-  8.3, `Deprecated: Optional parameter $a declared before required parameter $b ...`, mas o `php -l` sai com 0.
+  8.4, `Deprecated: Optional parameter $a declared before required parameter $b ...`, mas o `php -l` sai com 0.
 
 Os arquivos são conferidos um de cada vez, na ordem mostrada.
 

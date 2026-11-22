@@ -15,7 +15,7 @@ jobs:
       contents: write
       pull-requests: read
       id-token: write
-    uses: Elavora/.github/.github/workflows/release.yml@2a6cd142f0cd3f1aac93b98d19f561d4f91e169e # 1.3.2
+    uses: Elavora/.github/.github/workflows/release.yml@02a1ef8f2c56f8a00915d185cc346336f1250797 # 2.0.0
     with:
       package_name: elavora/code-standards
     secrets:
